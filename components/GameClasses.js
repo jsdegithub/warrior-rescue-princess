@@ -3,6 +3,8 @@ export class SoundManager {
 	constructor() {
 		this.enabled = true;
 		this.audioContext = null;
+		this.bgMusic = null; // 背景音乐
+		this.bgMusicVolume = 0.4; // 背景音乐音量
 		this.initAudioContext();
 	}
 
@@ -11,6 +13,62 @@ export class SoundManager {
 			this.audioContext = new (window.AudioContext || window.webkitAudioContext)();
 		} catch (e) {
 			console.log('Web Audio API not supported');
+		}
+	}
+
+	// 播放背景音乐
+	playBackgroundMusic(musicPath) {
+		if (!this.enabled) return;
+
+		try {
+			// 使用 uni-app 的音频 API
+			this.bgMusic = uni.createInnerAudioContext();
+			this.bgMusic.src = musicPath;
+			this.bgMusic.loop = true; // 循环播放
+			this.bgMusic.volume = this.bgMusicVolume;
+			this.bgMusic.autoplay = true;
+
+			// 监听播放事件
+			this.bgMusic.onPlay(() => {
+				console.log('背景音乐开始播放');
+			});
+
+			this.bgMusic.onError((err) => {
+				console.log('背景音乐播放出错:', err);
+			});
+		} catch (e) {
+			console.log('背景音乐初始化失败:', e);
+		}
+	}
+
+	// 停止背景音乐
+	stopBackgroundMusic() {
+		if (this.bgMusic) {
+			this.bgMusic.stop();
+			this.bgMusic.destroy();
+			this.bgMusic = null;
+		}
+	}
+
+	// 暂停背景音乐
+	pauseBackgroundMusic() {
+		if (this.bgMusic) {
+			this.bgMusic.pause();
+		}
+	}
+
+	// 恢复背景音乐
+	resumeBackgroundMusic() {
+		if (this.bgMusic) {
+			this.bgMusic.play();
+		}
+	}
+
+	// 设置背景音乐音量
+	setBackgroundVolume(volume) {
+		this.bgMusicVolume = Math.max(0, Math.min(1, volume));
+		if (this.bgMusic) {
+			this.bgMusic.volume = this.bgMusicVolume;
 		}
 	}
 

@@ -131,6 +131,10 @@ export default {
     if (this.animationFrame) {
       cancelAnimationFrame(this.animationFrame);
     }
+    // 停止背景音乐
+    if (this.soundManager) {
+      this.soundManager.stopBackgroundMusic();
+    }
   },
   methods: {
     initGame() {
@@ -212,6 +216,11 @@ export default {
       this.cameraX = 0;
       this.health = this.warrior.health;
       this.gameState = 'playing';
+
+      // 播放背景音乐
+      if (this.soundManager && !this.soundManager.bgMusic) {
+        this.soundManager.playBackgroundMusic('/static/assets/music/bg.mp3');
+      }
     },
 
     createPlatforms() {
@@ -455,11 +464,19 @@ export default {
     pauseGame() {
       if (this.gameState === 'playing') {
         this.gameState = 'paused';
+        // 暂停背景音乐
+        if (this.soundManager) {
+          this.soundManager.pauseBackgroundMusic();
+        }
       }
     },
     resumeGame() {
       if (this.gameState === 'paused') {
         this.gameState = 'playing';
+        // 恢复背景音乐
+        if (this.soundManager) {
+          this.soundManager.resumeBackgroundMusic();
+        }
       }
     },
     restartGame() {
@@ -467,6 +484,10 @@ export default {
       this.initLevel();
     },
     backToMenu() {
+      // 停止背景音乐
+      if (this.soundManager) {
+        this.soundManager.stopBackgroundMusic();
+      }
       uni.navigateBack();
     },
   },
