@@ -62,8 +62,8 @@ export class Warrior {
 	constructor(x, y, image, soundManager, sprites, imagePath) {
 		this.x = x;
 		this.y = y;
-		this.width = 60;
-		this.height = 80;
+		this.width = 45;
+		this.height = 60;
 		this.image = image;
 		this.imagePath = imagePath; // 头像路径
 		this.soundManager = soundManager;
@@ -257,9 +257,9 @@ export class Warrior {
 				ctx.drawImage(
 					currentSpritePath,
 					this.x,
-					this.y + 25, // 从颈部以下开始绘制
+					this.y + 20, // 从颈部以下开始绘制
 					this.width,
-					this.height - 25
+					this.height - 20
 				);
 				spriteDrawn = true;
 			} catch (e) {
@@ -271,27 +271,27 @@ export class Warrior {
 		// 如果精灵图绘制失败，使用简单形状
 		if (!spriteDrawn) {
 			ctx.fillStyle = '#4169E1'; // 蓝色
-			ctx.fillRect(this.x, this.y + 25, this.width, this.height - 25);
+			ctx.fillRect(this.x, this.y + 20, this.width, this.height - 20);
 
 			// 绘制四肢简单线条
 			ctx.strokeStyle = '#4169E1';
-			ctx.lineWidth = 4;
+			ctx.lineWidth = 3;
 			// 左臂
 			ctx.beginPath();
-			ctx.moveTo(this.x + 10, this.y + 35);
-			ctx.lineTo(this.x + 5, this.y + 50);
+			ctx.moveTo(this.x + 8, this.y + 28);
+			ctx.lineTo(this.x + 4, this.y + 40);
 			ctx.stroke();
 			// 右臂
 			ctx.beginPath();
-			ctx.moveTo(this.x + 50, this.y + 35);
-			ctx.lineTo(this.x + 55, this.y + 50);
+			ctx.moveTo(this.x + 37, this.y + 28);
+			ctx.lineTo(this.x + 41, this.y + 40);
 			ctx.stroke();
 		}
 
 		// 绘制头部（圆形照片）
 		const headCenterX = this.x + this.width / 2;
-		const headCenterY = this.y + 15;
-		const headRadius = 15;
+		const headCenterY = this.y + 12;
+		const headRadius = 12;
 
 		ctx.save();
 		// 创建圆形裁剪区域
@@ -349,10 +349,26 @@ export class Princess {
 	constructor(x, y, image, imagePath) {
 		this.x = x;
 		this.y = y;
-		this.width = 60;
-		this.height = 80;
+		this.width = 45;
+		this.height = 60;
 		this.image = image;
 		this.imagePath = imagePath;
+
+		// 精灵图路径（字符串）
+		this.spritePaths = {
+			idle: '/static/assets/FemaleAdventurer/PNG/Poses/character_femaleAdventurer_idle.png',
+			walk: [
+				'/static/assets/FemaleAdventurer/PNG/Poses/character_femaleAdventurer_walk0.png',
+				'/static/assets/FemaleAdventurer/PNG/Poses/character_femaleAdventurer_walk1.png',
+				'/static/assets/FemaleAdventurer/PNG/Poses/character_femaleAdventurer_walk2.png',
+				'/static/assets/FemaleAdventurer/PNG/Poses/character_femaleAdventurer_walk3.png',
+			]
+		};
+
+		// 公主动画状态
+		this.walkFrame = 0;
+		this.walkTime = 0;
+		this.direction = 1;
 	}
 
 	drawPixel(ctx, x, y, size, color) {
@@ -360,72 +376,74 @@ export class Princess {
 		ctx.fillRect(x, y, size, size);
 	}
 
+	// 简单的动画更新
+	updateAnimation(deltaTime) {
+		// 简单的待机动画
+		this.walkTime += deltaTime;
+		if (this.walkTime > 200) {
+			this.walkFrame = (this.walkFrame + 1) % 4;
+			this.walkTime = 0;
+		}
+	}
+
 	draw(ctx) {
 		ctx.save();
 		ctx.imageSmoothingEnabled = false;
 
-		const pixelSize = 4;
-		const baseX = this.x;
-		const baseY = this.y;
+		// 选择当前精灵图（简单的待机动画）
+		const walkIndex = Math.floor(this.walkFrame / 2) % 4;
+		const currentSpritePath = this.spritePaths.walk[walkIndex] || this.spritePaths.idle;
 
-		const skinColor = '#FFE4B5';
-		const dressColor = '#FF69B4';
-		const dressLight = '#FFB6C1';
-		const crownColor = '#FFD700';
+		// 绘制公主身体（精灵图）
+		let spriteDrawn = false;
+		if (currentSpritePath && typeof ctx.drawImage === 'function') {
+			try {
+				// 使用 drawImage 的 9 参数版本来裁剪精灵图头部
+				const sourceWidth = 96;  // 精灵图原始宽度
+				const sourceHeight = 96; // 精灵图原始高度
+				const headHeight = 30;   // 精灵图头部高度（需要裁剪掉的部分）
 
-		const dressPixels = [
-			[4, 7], [5, 7], [6, 7], [7, 7], [8, 7],
-			[4, 8], [5, 8], [6, 8], [7, 8], [8, 8],
-			[4, 9], [5, 9], [6, 9], [7, 9], [8, 9],
-			[3, 10], [4, 10], [5, 10], [6, 10], [7, 10], [8, 10], [9, 10],
-			[2, 11], [3, 11], [4, 11], [5, 11], [6, 11], [7, 11], [8, 11], [9, 11], [10, 11],
-			[2, 12], [3, 12], [4, 12], [5, 12], [6, 12], [7, 12], [8, 12], [9, 12], [10, 12],
-			[2, 13], [3, 13], [4, 13], [5, 13], [6, 13], [7, 13], [8, 13], [9, 13], [10, 13],
-			[2, 14], [3, 14], [4, 14], [5, 14], [6, 14], [7, 14], [8, 14], [9, 14], [10, 14],
-			[3, 15], [4, 15], [5, 15], [6, 15], [7, 15], [8, 15], [9, 15],
-		];
-		dressPixels.forEach(([px, py]) => {
-			this.drawPixel(ctx, baseX + px * pixelSize, baseY + py * pixelSize, pixelSize, dressColor);
-		});
+				// 只绘制精灵图的身体部分（从 headHeight 开始）
+				ctx.drawImage(
+					currentSpritePath,
+					0,                          // 源图 x 起点
+					headHeight,                 // 源图 y 起点（跳过头部）
+					sourceWidth,                // 源图宽度
+					sourceHeight - headHeight,  // 源图高度（去掉头部）
+					this.x,                     // 目标 x
+					this.y + 20,                // 目标 y（为自定义头部留空间）
+					this.width,                 // 目标宽度
+					this.height - 20            // 目标高度
+				);
+				spriteDrawn = true;
+			} catch (e) {
+				// 如果精灵图绘制失败，使用默认形状
+				spriteDrawn = false;
+			}
+		}
 
-		const dressDecor = [
-			[3, 13], [5, 13], [7, 13], [9, 13],
-			[4, 14], [6, 14], [8, 14],
-		];
-		dressDecor.forEach(([px, py]) => {
-			this.drawPixel(ctx, baseX + px * pixelSize, baseY + py * pixelSize, pixelSize, dressLight);
-		});
+		// 如果精灵图绘制失败，使用简单形状
+		if (!spriteDrawn) {
+			ctx.fillStyle = '#FF69B4'; // 粉色
+			ctx.fillRect(this.x, this.y + 20, this.width, this.height - 20);
+		}
 
-		const armPixels = [
-			[2, 8], [2, 9], [2, 10],
-			[10, 8], [10, 9], [10, 10],
-		];
-		armPixels.forEach(([px, py]) => {
-			this.drawPixel(ctx, baseX + px * pixelSize, baseY + py * pixelSize, pixelSize, dressColor);
-		});
-
-		const handPixels = [
-			[1, 10], [1, 11],
-			[11, 10], [11, 11],
-		];
-		handPixels.forEach(([px, py]) => {
-			this.drawPixel(ctx, baseX + px * pixelSize, baseY + py * pixelSize, pixelSize, skinColor);
-		});
-
-		// 绘制头部（圆形照片）
-		const headCenterX = baseX + 6 * pixelSize;
-		const headCenterY = baseY + 4 * pixelSize;
-		const headRadius = 10;
+		// 绘制头部（圆形照片 princess.jpg）
+		const headCenterX = this.x + this.width / 2;
+		const headCenterY = this.y + 12;
+		const headRadius = 12;
 
 		ctx.save();
+		// 创建圆形裁剪区域
 		ctx.beginPath();
 		ctx.arc(headCenterX, headCenterY, headRadius, 0, Math.PI * 2);
 		ctx.closePath();
 		ctx.clip();
 
-		// 尝试绘制公主照片
+		// 在圆形区域内绘制照片
 		if (this.imagePath && typeof ctx.drawImage === 'function') {
 			try {
+				// 尝试直接使用路径绘制 princess.jpg
 				ctx.drawImage(
 					this.imagePath,
 					headCenterX - headRadius,
@@ -434,44 +452,33 @@ export class Princess {
 					headRadius * 2
 				);
 			} catch (e) {
-				// 如果失败，使用像素绘制默认头部
-				const headPixels = [
-					[4, 2], [5, 2], [6, 2], [7, 2],
-					[3, 3], [4, 3], [5, 3], [6, 3], [7, 3], [8, 3],
-					[3, 4], [4, 4], [5, 4], [6, 4], [7, 4], [8, 4],
-					[3, 5], [4, 5], [5, 5], [6, 5], [7, 5], [8, 5],
-					[4, 6], [5, 6], [6, 6], [7, 6],
-				];
-				headPixels.forEach(([px, py]) => {
-					this.drawPixel(ctx, baseX + px * pixelSize, baseY + py * pixelSize, pixelSize, skinColor);
-				});
+				// 如果失败，绘制默认头部
+				ctx.fillStyle = '#FFE4B5';
+				ctx.fillRect(
+					headCenterX - headRadius,
+					headCenterY - headRadius,
+					headRadius * 2,
+					headRadius * 2
+				);
 			}
 		} else {
-			// 默认像素头部
-			const headPixels = [
-				[4, 2], [5, 2], [6, 2], [7, 2],
-				[3, 3], [4, 3], [5, 3], [6, 3], [7, 3], [8, 3],
-				[3, 4], [4, 4], [5, 4], [6, 4], [7, 4], [8, 4],
-				[3, 5], [4, 5], [5, 5], [6, 5], [7, 5], [8, 5],
-				[4, 6], [5, 6], [6, 6], [7, 6],
-			];
-			headPixels.forEach(([px, py]) => {
-				this.drawPixel(ctx, baseX + px * pixelSize, baseY + py * pixelSize, pixelSize, skinColor);
-			});
+			// 默认头部
+			ctx.fillStyle = '#FFE4B5';
+			ctx.fillRect(
+				headCenterX - headRadius,
+				headCenterY - headRadius,
+				headRadius * 2,
+				headRadius * 2
+			);
 		}
 		ctx.restore();
 
-		const crownPixels = [
-			[4, 0], [5, 0], [6, 0], [7, 0], [8, 0],
-			[4, 1], [5, 1], [6, 1], [7, 1], [8, 1],
-			[3, 1], [9, 1],
-			[5, -1], [7, -1],
-		];
-		crownPixels.forEach(([px, py]) => {
-			this.drawPixel(ctx, baseX + px * pixelSize, baseY + (py + 2) * pixelSize, pixelSize, crownColor);
-		});
-
-		this.drawPixel(ctx, baseX + 6 * pixelSize, baseY + 2 * pixelSize, pixelSize, '#FF1493');
+		// 绘制头部边框
+		ctx.beginPath();
+		ctx.arc(headCenterX, headCenterY, headRadius, 0, Math.PI * 2);
+		ctx.strokeStyle = '#FFD700';
+		ctx.lineWidth = 2;
+		ctx.stroke();
 
 		ctx.restore();
 	}

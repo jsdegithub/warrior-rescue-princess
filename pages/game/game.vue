@@ -202,7 +202,8 @@ export default {
 
     initLevel() {
       this.warrior = new Warrior(100, 300, this.warriorImg, this.soundManager, this.warriorSprites, this.warriorImgSrc);
-      this.princess = new Princess(this.levelWidth - 200, this.height - 150, this.princessImg, this.princessImgSrc);
+      // 让公主站在地面上：地面在 height - 50，公主高度 60，所以 y = height - 50 - 60
+      this.princess = new Princess(this.levelWidth - 200, this.height - 110, this.princessImg, this.princessImgSrc);
 
       this.createPlatforms();
       this.createEnemies();
@@ -265,6 +266,11 @@ export default {
         };
 
         this.warrior.update(deltaTime, input, this.platforms, this.traps);
+
+        // 更新公主动画
+        if (this.princess) {
+          this.princess.updateAnimation(deltaTime);
+        }
 
         this.enemies.forEach((enemy) => enemy.update(deltaTime));
 
