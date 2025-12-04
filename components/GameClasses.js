@@ -156,6 +156,8 @@ export class Warrior {
 		this.attackTime = 0;
 		this.isInvulnerable = false;
 		this.invulnerableTime = 0;
+		this.isFalling = false; // 是否正在掉落到陷阱中
+		this.fallStartY = 0; // 开始掉落时的Y坐标
 
 		this.direction = 1;
 		this.walkFrame = 0;
@@ -164,26 +166,29 @@ export class Warrior {
 	}
 
 	update(deltaTime, input, platforms, traps) {
-		this.vx = 0;
-		if (input.left) {
-			this.vx = -this.speed;
-			this.direction = -1;
-		}
-		if (input.right) {
-			this.vx = this.speed;
-			this.direction = 1;
-		}
+		// 如果正在掉落，禁用控制，只应用重力
+		if (!this.isFalling) {
+			this.vx = 0;
+			if (input.left) {
+				this.vx = -this.speed;
+				this.direction = -1;
+			}
+			if (input.right) {
+				this.vx = this.speed;
+				this.direction = 1;
+			}
 
-		if (input.jump && this.onGround) {
-			this.vy = this.jumpPower;
-			this.onGround = false;
-			this.soundManager.jump();
-		}
+			if (input.jump && this.onGround) {
+				this.vy = this.jumpPower;
+				this.onGround = false;
+				this.soundManager.jump();
+			}
 
-		if (input.attack && !this.isAttacking) {
-			this.isAttacking = true;
-			this.attackTime = 300;
-			this.soundManager.attack();
+			if (input.attack && !this.isAttacking) {
+				this.isAttacking = true;
+				this.attackTime = 300;
+				this.soundManager.attack();
+			}
 		}
 
 		if (this.attackTime > 0) {
@@ -204,14 +209,22 @@ export class Warrior {
 		this.x += this.vx;
 		this.y += this.vy;
 
-		this.checkTraps(traps);
+		// 如果正在掉落，检查是否掉落到足够深度
+		if (this.isFalling) {
+			if (this.y > this.fallStartY + 150) {
+				this.health = 0; // 掉落到足够深度后才判定死亡
+			}
+			return; // 掉落状态下不检测平台碰撞和陷阱
+		}
 
 		this.onGround = false;
 		platforms.forEach((platform) => {
 			if (this.checkPlatformCollision(platform)) {
-				this.handlePlatformCollision(platform);
+				this.handlePlatformCollision(platform, traps);
 			}
 		});
+
+		this.checkTraps(traps);
 
 		if (this.vx !== 0 && this.onGround) {
 			this.walkTime += deltaTime;
@@ -227,8 +240,26 @@ export class Warrior {
 	checkTraps(traps) {
 		traps.forEach((trap) => {
 			if (trap.type === 'pit') {
-				if (this.x + this.width > trap.x && this.x < trap.x + trap.width && this.y + this.height > trap.y) {
-					this.health = 0;
+				// 检查勇士是否在陷阱的水平范围内
+				const warriorLeft = this.x;
+				const warriorRight = this.x + this.width;
+
+				// 勇士的大部分身体（超过70%）在陷阱范围内
+				const overlapLeft = Math.max(warriorLeft, trap.x);
+				const overlapRight = Math.min(warriorRight, trap.x + trap.width);
+				const overlapWidth = Math.max(0, overlapRight - overlapLeft);
+				const overlapRatio = overlapWidth / this.width;
+
+				// 检查勇士的底部是否接近陷阱顶部（在陷阱上方60像素以内）
+				const warriorBottom = this.y + this.height;
+				const distanceToTrap = trap.y - warriorBottom;
+
+				// 只有当勇士接近陷阱、正在下落、没有站在平台上、且大部分身体在陷阱上方时才触发
+				if (overlapRatio > 0.7 && !this.onGround && this.vy > 0 && !this.isFalling && distanceToTrap < 60 && distanceToTrap > -20) {
+					// 开始掉落
+					this.isFalling = true;
+					this.fallStartY = this.y;
+					this.vx = 0; // 停止水平移动
 				}
 			} else if (trap.type === 'spike') {
 				if (
@@ -253,10 +284,32 @@ export class Warrior {
 		);
 	}
 
-	handlePlatformCollision(platform) {
+	handlePlatformCollision(platform, traps) {
 		const prevY = this.y - this.vy;
 
 		if (prevY + this.height <= platform.y && this.vy > 0) {
+			// 如果是地面平台，检查是否在陷阱上方
+			if (platform.type === 'ground') {
+				const warriorLeft = this.x;
+				const warriorRight = this.x + this.width;
+
+				// 检查是否在任何坑陷阱上方
+				for (const trap of traps) {
+					if (trap.type === 'pit') {
+						const overlapLeft = Math.max(warriorLeft, trap.x);
+						const overlapRight = Math.min(warriorRight, trap.x + trap.width);
+						const overlapWidth = Math.max(0, overlapRight - overlapLeft);
+						const overlapRatio = overlapWidth / this.width;
+
+						// 如果勇士超过70%在陷阱上方，不让他站在地面上，让他掉落
+						if (overlapRatio > 0.7 && Math.abs(platform.y - trap.y) < 5) {
+							return; // 不处理碰撞，让勇士继续下落
+						}
+					}
+				}
+			}
+
+			// 正常的平台碰撞处理
 			this.y = platform.y - this.height;
 			this.vy = 0;
 			this.onGround = true;
