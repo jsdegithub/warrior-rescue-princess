@@ -67,7 +67,7 @@
     <!-- 游戏结束界面 -->
     <view v-if="gameState === 'gameover'" class="gameover-screen">
       <view class="gameover-content">
-        <text class="gameover-title">💀 游戏结束</text>
+        <text class="gameover-title">燕子，没有你我怎么活啊~</text>
         <button class="menu-btn" @click="restartGame">重新开始</button>
         <button class="menu-btn" @click="backToMenu">返回菜单</button>
       </view>
