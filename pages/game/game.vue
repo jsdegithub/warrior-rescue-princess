@@ -498,7 +498,7 @@ export default {
       }
       // 使用 redirectTo 确保能返回主菜单
       uni.redirectTo({
-        url: '/pages/index/index'
+        url: '/pages/index/index',
       });
     },
   },
@@ -552,8 +552,8 @@ export default {
   position: absolute;
   top: 20px;
   right: 20px;
-  width: 50px;
-  height: 50px;
+  height: 35px;
+  line-height: 35px;
   background: rgba(0, 0, 0, 0.5);
   color: white;
   border: none;
