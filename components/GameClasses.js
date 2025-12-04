@@ -398,22 +398,13 @@ export class Princess {
 		let spriteDrawn = false;
 		if (currentSpritePath && typeof ctx.drawImage === 'function') {
 			try {
-				// 使用 drawImage 的 9 参数版本来裁剪精灵图头部
-				const sourceWidth = 96;  // 精灵图原始宽度
-				const sourceHeight = 96; // 精灵图原始高度
-				const headHeight = 30;   // 精灵图头部高度（需要裁剪掉的部分）
-
-				// 只绘制精灵图的身体部分（从 headHeight 开始）
+				// 使用路径字符串绘制精灵图
 				ctx.drawImage(
 					currentSpritePath,
-					0,                          // 源图 x 起点
-					headHeight,                 // 源图 y 起点（跳过头部）
-					sourceWidth,                // 源图宽度
-					sourceHeight - headHeight,  // 源图高度（去掉头部）
-					this.x,                     // 目标 x
-					this.y + 20,                // 目标 y（为自定义头部留空间）
-					this.width,                 // 目标宽度
-					this.height - 20            // 目标高度
+					this.x,
+					this.y + 20, // 从颈部以下开始绘制
+					this.width,
+					this.height - 20
 				);
 				spriteDrawn = true;
 			} catch (e) {
