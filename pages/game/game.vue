@@ -480,6 +480,11 @@ export default {
       }
     },
     restartGame() {
+      // 先停止旧的背景音乐
+      if (this.soundManager && this.soundManager.bgMusic) {
+        this.soundManager.stopBackgroundMusic();
+      }
+
       this.gameState = 'playing';
       this.initLevel();
     },
