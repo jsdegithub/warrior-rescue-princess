@@ -65,9 +65,26 @@ export class Warrior {
 		this.width = 60;
 		this.height = 80;
 		this.image = image;
-		this.imagePath = imagePath;
+		this.imagePath = imagePath; // 头像路径
 		this.soundManager = soundManager;
 		this.sprites = sprites;
+
+		// 精灵图路径（字符串）
+		this.spritePaths = {
+			idle: '/static/assets/MaleAdventurer/PNG/Poses/character_maleAdventurer_idle.png',
+			jump: '/static/assets/MaleAdventurer/PNG/Poses/character_maleAdventurer_jump.png',
+			walk: [
+				'/static/assets/MaleAdventurer/PNG/Poses/character_maleAdventurer_walk0.png',
+				'/static/assets/MaleAdventurer/PNG/Poses/character_maleAdventurer_walk1.png',
+				'/static/assets/MaleAdventurer/PNG/Poses/character_maleAdventurer_walk2.png',
+				'/static/assets/MaleAdventurer/PNG/Poses/character_maleAdventurer_walk3.png',
+			],
+			attack: [
+				'/static/assets/MaleAdventurer/PNG/Poses/character_maleAdventurer_attack0.png',
+				'/static/assets/MaleAdventurer/PNG/Poses/character_maleAdventurer_attack1.png',
+				'/static/assets/MaleAdventurer/PNG/Poses/character_maleAdventurer_attack2.png',
+			]
+		};
 
 		this.vx = 0;
 		this.vy = 0;
@@ -213,15 +230,63 @@ export class Warrior {
 
 		ctx.imageSmoothingEnabled = false;
 
+		// 选择当前精灵图路径
+		let currentSpritePath = this.spritePaths.idle;
+		if (this.isAttacking) {
+			const attackFrameIndex = Math.min(2, Math.floor((300 - this.attackTime) / 100));
+			currentSpritePath = this.spritePaths.attack[attackFrameIndex] || this.spritePaths.idle;
+		} else if (!this.onGround) {
+			currentSpritePath = this.spritePaths.jump;
+		} else if (this.vx !== 0) {
+			const walkIndex = Math.floor(this.walkFrame / 2) % 4;
+			currentSpritePath = this.spritePaths.walk[walkIndex] || this.spritePaths.idle;
+		}
+
 		if (this.direction === -1) {
 			ctx.translate(this.x + this.width, 0);
 			ctx.scale(-1, 1);
 			ctx.translate(-this.x, 0);
 		}
 
-		// 绘制勇士身体（简单矩形）
-		ctx.fillStyle = '#4169E1'; // 蓝色
-		ctx.fillRect(this.x, this.y + 25, this.width, this.height - 25);
+		// 绘制勇士身体（精灵图）
+		// 先尝试使用精灵图，如果失败则使用简单矩形
+		let spriteDrawn = false;
+		if (currentSpritePath && typeof ctx.drawImage === 'function') {
+			try {
+				// 使用路径字符串绘制精灵图
+				ctx.drawImage(
+					currentSpritePath,
+					this.x,
+					this.y + 25, // 从颈部以下开始绘制
+					this.width,
+					this.height - 25
+				);
+				spriteDrawn = true;
+			} catch (e) {
+				// 如果精灵图绘制失败，使用默认矩形
+				spriteDrawn = false;
+			}
+		}
+
+		// 如果精灵图绘制失败，使用简单形状
+		if (!spriteDrawn) {
+			ctx.fillStyle = '#4169E1'; // 蓝色
+			ctx.fillRect(this.x, this.y + 25, this.width, this.height - 25);
+
+			// 绘制四肢简单线条
+			ctx.strokeStyle = '#4169E1';
+			ctx.lineWidth = 4;
+			// 左臂
+			ctx.beginPath();
+			ctx.moveTo(this.x + 10, this.y + 35);
+			ctx.lineTo(this.x + 5, this.y + 50);
+			ctx.stroke();
+			// 右臂
+			ctx.beginPath();
+			ctx.moveTo(this.x + 50, this.y + 35);
+			ctx.lineTo(this.x + 55, this.y + 50);
+			ctx.stroke();
+		}
 
 		// 绘制头部（圆形照片）
 		const headCenterX = this.x + this.width / 2;
