@@ -276,6 +276,9 @@ export default {
 
         this.warrior.update(deltaTime, input, this.platforms, this.traps);
 
+        // 同步血量（陷阱伤害会在 warrior.update 中更新 warrior.health）
+        this.health = this.warrior.health;
+
         // 更新公主动画
         if (this.princess) {
           this.princess.updateAnimation(deltaTime);
