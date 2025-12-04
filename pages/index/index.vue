@@ -1,8 +1,8 @@
 <template>
   <view class="container">
     <view class="menu-screen">
-      <view class="title">勇士救公主</view>
-      <view class="subtitle">Warrior Rescue Princess</view>
+      <view class="title">钱程似金</view>
+      <view class="subtitle">JinShuo Loves ChengYan</view>
 
       <view class="menu-buttons">
         <button class="menu-btn start-btn" @click="startGame">开始游戏</button>
