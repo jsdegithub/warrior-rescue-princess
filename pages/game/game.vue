@@ -537,6 +537,7 @@ export default {
 
 .heart {
   font-size: 30px;
+  color: #f5576c;
   transition: opacity 0.3s;
 }
 
