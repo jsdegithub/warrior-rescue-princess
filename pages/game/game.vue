@@ -98,6 +98,7 @@ export default {
 
       levelWidth: 4000,
       health: 3,
+      victoryTriggered: false,
 
       keys: {},
       touches: {
@@ -215,6 +216,7 @@ export default {
 
       this.cameraX = 0;
       this.health = this.warrior.health;
+      this.victoryTriggered = false;
       this.gameState = 'playing';
 
       // 播放背景音乐
@@ -302,7 +304,10 @@ export default {
         this.updateCamera();
         this.checkVictory();
         this.checkGameOver();
-      } else if (this.gameState === 'victory') {
+      }
+
+      // 无论什么状态，只要触发了胜利就更新爱心粒子
+      if (this.victoryTriggered) {
         this.hearts.forEach((heart) => {
           heart.x += heart.vx;
           heart.y += heart.vy;
@@ -318,10 +323,15 @@ export default {
 
     checkVictory() {
       const distance = Math.abs(this.warrior.x - this.princess.x);
-      if (distance < 100 && Math.abs(this.warrior.y - this.princess.y) < 100) {
-        this.gameState = 'victory';
+      if (distance < 100 && Math.abs(this.warrior.y - this.princess.y) < 100 && !this.victoryTriggered) {
+        this.victoryTriggered = true;
         this.createHeartParticles();
         this.soundManager.victory();
+
+        // 延迟2秒弹出胜利弹窗
+        setTimeout(() => {
+          this.gameState = 'victory';
+        }, 1000);
       }
     },
 
@@ -333,10 +343,14 @@ export default {
 
     createHeartParticles() {
       this.hearts = [];
+      // 计算公主在屏幕上的位置（世界坐标 - 相机偏移）
+      const princessScreenX = this.princess.x - this.cameraX;
+      const princessScreenY = this.princess.y;
+
       for (let i = 0; i < 20; i++) {
         this.hearts.push({
-          x: this.width / 2 + (Math.random() - 0.5) * 200,
-          y: this.height,
+          x: princessScreenX + this.princess.width / 2 + (Math.random() - 0.5) * 50,
+          y: princessScreenY + this.princess.height / 2,
           vx: (Math.random() - 0.5) * 2,
           vy: -2 - Math.random() * 3,
           size: 20 + Math.random() * 20,
@@ -376,7 +390,8 @@ export default {
 
       this.ctx.restore();
 
-      if (this.gameState === 'victory') {
+      // 只要触发了胜利就渲染爱心粒子
+      if (this.victoryTriggered) {
         this.renderHeartParticles();
       }
 
