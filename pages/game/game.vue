@@ -58,7 +58,7 @@
     <view v-if="gameState === 'victory'" class="victory-screen">
       <view class="victory-content">
         <text class="victory-title">🎉 恭喜通关!</text>
-        <text class="victory-text">钱程似锦</text>
+        <text class="victory-text">喜结良缘，钱程似锦！</text>
         <button class="menu-btn" @click="restartGame">再玩一次</button>
         <button class="menu-btn" @click="backToMenu">返回菜单</button>
       </view>
