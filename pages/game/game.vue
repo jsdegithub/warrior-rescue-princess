@@ -488,7 +488,10 @@ export default {
       if (this.soundManager) {
         this.soundManager.stopBackgroundMusic();
       }
-      uni.navigateBack();
+      // 使用 redirectTo 确保能返回主菜单
+      uni.redirectTo({
+        url: '/pages/index/index'
+      });
     },
   },
 };
