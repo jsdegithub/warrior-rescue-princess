@@ -16,12 +16,19 @@
 				<text v-for="(item, index) in 3" :key="index" class="heart" :class="{ lost: index >= health }">❤</text>
 			</view>
 
+			<!-- 勇士头像 -->
+			<view v-if="gameState === 'playing'" class="warrior-float">
+				<image :src="warriorImgSrc" class="warrior-avatar"></image>
+				<text class="avatar-label">勇士</text>
+			</view>
+
 			<!-- 暂停按钮 -->
 			<button class="pause-btn" @click="pauseGame">⏸</button>
 
 			<!-- 公主头像悬浮 -->
 			<view v-if="gameState === 'playing'" class="princess-float">
 				<image :src="princessImgSrc" class="princess-avatar"></image>
+				<text class="avatar-label">公主</text>
 			</view>
 		</view>
 
@@ -194,8 +201,8 @@ export default {
 		},
 
 		initLevel() {
-			this.warrior = new Warrior(100, 300, this.warriorImg, this.soundManager, this.warriorSprites);
-			this.princess = new Princess(this.levelWidth - 200, this.height - 150, this.princessImg);
+			this.warrior = new Warrior(100, 300, this.warriorImg, this.soundManager, this.warriorSprites, this.warriorImgSrc);
+			this.princess = new Princess(this.levelWidth - 200, this.height - 150, this.princessImg, this.princessImgSrc);
 
 			this.createPlatforms();
 			this.createEnemies();
@@ -516,21 +523,54 @@ export default {
 	pointer-events: auto;
 }
 
+.warrior-float {
+	position: absolute;
+	top: 80px;
+	left: 20px;
+	display: flex;
+	flex-direction: column;
+	align-items: center;
+	gap: 5px;
+	animation: float 3s ease-in-out infinite;
+	pointer-events: none;
+}
+
+.warrior-avatar {
+	width: 60px;
+	height: 60px;
+	border-radius: 50%;
+	border: 3px solid #4169E1;
+	box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
+}
+
 .princess-float {
 	position: absolute;
 	top: 80px;
 	right: 20px;
-	width: 60px;
-	height: 60px;
+	display: flex;
+	flex-direction: column;
+	align-items: center;
+	gap: 5px;
 	animation: float 3s ease-in-out infinite;
 	pointer-events: none;
 }
 
 .princess-avatar {
-	width: 100%;
-	height: 100%;
+	width: 60px;
+	height: 60px;
 	border-radius: 50%;
 	border: 3px solid #FFD700;
+	box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
+}
+
+.avatar-label {
+	font-size: 12px;
+	color: white;
+	background: rgba(0, 0, 0, 0.6);
+	padding: 2px 8px;
+	border-radius: 10px;
+	font-weight: bold;
+	text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.5);
 }
 
 @keyframes float {

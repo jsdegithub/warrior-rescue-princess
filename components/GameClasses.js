@@ -59,12 +59,13 @@ export class SoundManager {
 
 // 勇士类
 export class Warrior {
-	constructor(x, y, image, soundManager, sprites) {
+	constructor(x, y, image, soundManager, sprites, imagePath) {
 		this.x = x;
 		this.y = y;
 		this.width = 60;
 		this.height = 80;
 		this.image = image;
+		this.imagePath = imagePath;
 		this.soundManager = soundManager;
 		this.sprites = sprites;
 
@@ -212,10 +213,6 @@ export class Warrior {
 
 		ctx.imageSmoothingEnabled = false;
 
-		// 暂时注释掉精灵图像，使用简单矩形代替
-		// let currentSprite = this.sprites.idle;
-		// ... (原来的精灵选择逻辑)
-
 		if (this.direction === -1) {
 			ctx.translate(this.x + this.width, 0);
 			ctx.scale(-1, 1);
@@ -226,16 +223,57 @@ export class Warrior {
 		ctx.fillStyle = '#4169E1'; // 蓝色
 		ctx.fillRect(this.x, this.y + 25, this.width, this.height - 25);
 
-		// 绘制头部（圆形）
+		// 绘制头部（圆形照片）
+		const headCenterX = this.x + this.width / 2;
+		const headCenterY = this.y + 15;
+		const headRadius = 15;
+
 		ctx.save();
+		// 创建圆形裁剪区域
 		ctx.beginPath();
-		ctx.arc(this.x + this.width / 2, this.y + 15, 15, 0, Math.PI * 2);
-		ctx.fillStyle = '#FFE4B5';
-		ctx.fill();
+		ctx.arc(headCenterX, headCenterY, headRadius, 0, Math.PI * 2);
+		ctx.closePath();
+		ctx.clip();
+
+		// 在圆形区域内绘制照片
+		if (this.imagePath && typeof ctx.drawImage === 'function') {
+			try {
+				// 尝试直接使用路径绘制（uni-app 可能支持）
+				ctx.drawImage(
+					this.imagePath,
+					headCenterX - headRadius,
+					headCenterY - headRadius,
+					headRadius * 2,
+					headRadius * 2
+				);
+			} catch (e) {
+				// 如果失败，绘制默认头部
+				ctx.fillStyle = '#FFE4B5';
+				ctx.fillRect(
+					headCenterX - headRadius,
+					headCenterY - headRadius,
+					headRadius * 2,
+					headRadius * 2
+				);
+			}
+		} else {
+			// 默认头部
+			ctx.fillStyle = '#FFE4B5';
+			ctx.fillRect(
+				headCenterX - headRadius,
+				headCenterY - headRadius,
+				headRadius * 2,
+				headRadius * 2
+			);
+		}
+		ctx.restore();
+
+		// 绘制头部边框
+		ctx.beginPath();
+		ctx.arc(headCenterX, headCenterY, headRadius, 0, Math.PI * 2);
 		ctx.strokeStyle = '#FFD700';
 		ctx.lineWidth = 2;
 		ctx.stroke();
-		ctx.restore();
 
 		ctx.restore();
 	}
@@ -243,12 +281,13 @@ export class Warrior {
 
 // 公主类
 export class Princess {
-	constructor(x, y, image) {
+	constructor(x, y, image, imagePath) {
 		this.x = x;
 		this.y = y;
 		this.width = 60;
 		this.height = 80;
 		this.image = image;
+		this.imagePath = imagePath;
 	}
 
 	drawPixel(ctx, x, y, size, color) {
@@ -308,23 +347,53 @@ export class Princess {
 			this.drawPixel(ctx, baseX + px * pixelSize, baseY + py * pixelSize, pixelSize, skinColor);
 		});
 
+		// 绘制头部（圆形照片）
+		const headCenterX = baseX + 6 * pixelSize;
+		const headCenterY = baseY + 4 * pixelSize;
+		const headRadius = 10;
+
 		ctx.save();
 		ctx.beginPath();
-		ctx.arc(baseX + 6 * pixelSize, baseY + 4 * pixelSize, 10, 0, Math.PI * 2);
+		ctx.arc(headCenterX, headCenterY, headRadius, 0, Math.PI * 2);
 		ctx.closePath();
 		ctx.clip();
 
-		// 使用像素绘制头部（移除图像加载以避免 uni-app canvas 错误）
-		const headPixels = [
-			[4, 2], [5, 2], [6, 2], [7, 2],
-			[3, 3], [4, 3], [5, 3], [6, 3], [7, 3], [8, 3],
-			[3, 4], [4, 4], [5, 4], [6, 4], [7, 4], [8, 4],
-			[3, 5], [4, 5], [5, 5], [6, 5], [7, 5], [8, 5],
-			[4, 6], [5, 6], [6, 6], [7, 6],
-		];
-		headPixels.forEach(([px, py]) => {
-			this.drawPixel(ctx, baseX + px * pixelSize, baseY + py * pixelSize, pixelSize, skinColor);
-		});
+		// 尝试绘制公主照片
+		if (this.imagePath && typeof ctx.drawImage === 'function') {
+			try {
+				ctx.drawImage(
+					this.imagePath,
+					headCenterX - headRadius,
+					headCenterY - headRadius,
+					headRadius * 2,
+					headRadius * 2
+				);
+			} catch (e) {
+				// 如果失败，使用像素绘制默认头部
+				const headPixels = [
+					[4, 2], [5, 2], [6, 2], [7, 2],
+					[3, 3], [4, 3], [5, 3], [6, 3], [7, 3], [8, 3],
+					[3, 4], [4, 4], [5, 4], [6, 4], [7, 4], [8, 4],
+					[3, 5], [4, 5], [5, 5], [6, 5], [7, 5], [8, 5],
+					[4, 6], [5, 6], [6, 6], [7, 6],
+				];
+				headPixels.forEach(([px, py]) => {
+					this.drawPixel(ctx, baseX + px * pixelSize, baseY + py * pixelSize, pixelSize, skinColor);
+				});
+			}
+		} else {
+			// 默认像素头部
+			const headPixels = [
+				[4, 2], [5, 2], [6, 2], [7, 2],
+				[3, 3], [4, 3], [5, 3], [6, 3], [7, 3], [8, 3],
+				[3, 4], [4, 4], [5, 4], [6, 4], [7, 4], [8, 4],
+				[3, 5], [4, 5], [5, 5], [6, 5], [7, 5], [8, 5],
+				[4, 6], [5, 6], [6, 6], [7, 6],
+			];
+			headPixels.forEach(([px, py]) => {
+				this.drawPixel(ctx, baseX + px * pixelSize, baseY + py * pixelSize, pixelSize, skinColor);
+			});
+		}
 		ctx.restore();
 
 		const crownPixels = [
