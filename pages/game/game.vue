@@ -322,8 +322,14 @@ export default {
     },
 
     checkVictory() {
-      const distance = Math.abs(this.warrior.x - this.princess.x);
-      if (distance < 100 && Math.abs(this.warrior.y - this.princess.y) < 100 && !this.victoryTriggered) {
+      // 使用精确的碰撞检测：检查勇士和公主的矩形是否重叠
+      const collision =
+        this.warrior.x < this.princess.x + this.princess.width &&
+        this.warrior.x + this.warrior.width > this.princess.x &&
+        this.warrior.y < this.princess.y + this.princess.height &&
+        this.warrior.y + this.warrior.height > this.princess.y;
+
+      if (collision && !this.victoryTriggered) {
         this.victoryTriggered = true;
 
         // 清除所有移动输入状态，使勇士立即停止移动
