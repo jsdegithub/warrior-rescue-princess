@@ -35,12 +35,12 @@
     <!-- 虚拟按钮 -->
     <view class="controls">
       <view class="left-controls">
-        <button class="control-btn" @touchstart="onTouchLeft" @touchend="onRelease">←</button>
-        <button class="control-btn" @touchstart="onTouchRight" @touchend="onRelease">→</button>
+        <button class="control-btn" @touchstart="onTouchLeft" @touchend="onReleaseLeft">←</button>
+        <button class="control-btn" @touchstart="onTouchRight" @touchend="onReleaseRight">→</button>
       </view>
       <view class="right-controls">
-        <button class="control-btn jump-btn" @touchstart="onTouchJump" @touchend="onRelease">B</button>
-        <button class="control-btn attack-btn" @touchstart="onTouchAttack" @touchend="onRelease">A</button>
+        <button class="control-btn jump-btn" @touchstart="onTouchJump" @touchend="onReleaseJump">B</button>
+        <button class="control-btn attack-btn" @touchstart="onTouchAttack" @touchend="onReleaseAttack">A</button>
       </view>
     </view>
 
@@ -456,19 +456,25 @@ export default {
     onTouchLeft() {
       this.touches.left = true;
     },
+    onReleaseLeft() {
+      this.touches.left = false;
+    },
     onTouchRight() {
       this.touches.right = true;
+    },
+    onReleaseRight() {
+      this.touches.right = false;
     },
     onTouchJump() {
       this.touches.jump = true;
     },
+    onReleaseJump() {
+      this.touches.jump = false;
+    },
     onTouchAttack() {
       this.touches.attack = true;
     },
-    onRelease() {
-      this.touches.left = false;
-      this.touches.right = false;
-      this.touches.jump = false;
+    onReleaseAttack() {
       this.touches.attack = false;
     },
 
