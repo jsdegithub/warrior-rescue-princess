@@ -270,8 +270,8 @@ export default {
     update(deltaTime) {
       if (this.gameState === 'playing') {
         const input = {
-          left: this.keys['ArrowLeft'] || this.keys['a'] || this.keys['A'] || this.touches.left,
-          right: this.keys['ArrowRight'] || this.keys['d'] || this.keys['D'] || this.touches.right,
+          left: !this.victoryTriggered && (this.keys['ArrowLeft'] || this.keys['a'] || this.keys['A'] || this.touches.left),
+          right: !this.victoryTriggered && (this.keys['ArrowRight'] || this.keys['d'] || this.keys['D'] || this.touches.right),
           jump: this.keys[' '] || this.touches.jump,
           attack: this.keys['j'] || this.keys['J'] || this.touches.attack,
         };
@@ -325,6 +325,13 @@ export default {
       const distance = Math.abs(this.warrior.x - this.princess.x);
       if (distance < 100 && Math.abs(this.warrior.y - this.princess.y) < 100 && !this.victoryTriggered) {
         this.victoryTriggered = true;
+
+        // 清除所有移动输入状态，使勇士立即停止移动
+        this.touches.left = false;
+        this.touches.right = false;
+        this.touches.jump = false;
+        this.touches.attack = false;
+
         this.createHeartParticles();
         this.soundManager.victory();
 
