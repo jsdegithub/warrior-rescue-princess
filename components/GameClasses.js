@@ -165,7 +165,7 @@ export class Warrior {
 		this.attackFrame = 0;
 	}
 
-	update(deltaTime, input, platforms, traps) {
+	update(deltaTime, input, platforms, traps, levelWidth = Infinity) {
 		// 如果正在掉落，禁用控制，只应用重力
 		if (!this.isFalling) {
 			this.vx = 0;
@@ -208,6 +208,14 @@ export class Warrior {
 		this.vy += this.gravity;
 		this.x += this.vx;
 		this.y += this.vy;
+
+		// 限制勇士在关卡范围内（左边界为0，右边界为levelWidth）
+		if (this.x < 0) {
+			this.x = 0;
+		}
+		if (this.x + this.width > levelWidth) {
+			this.x = levelWidth - this.width;
+		}
 
 		// 如果正在掉落，检查是否掉落到足够深度
 		if (this.isFalling) {

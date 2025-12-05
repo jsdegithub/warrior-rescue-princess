@@ -276,7 +276,7 @@ export default {
           attack: this.keys['j'] || this.keys['J'] || this.touches.attack,
         };
 
-        this.warrior.update(deltaTime, input, this.platforms, this.traps);
+        this.warrior.update(deltaTime, input, this.platforms, this.traps, this.levelWidth);
 
         // 同步血量（陷阱伤害会在 warrior.update 中更新 warrior.health）
         this.health = this.warrior.health;
