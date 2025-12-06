@@ -81,7 +81,7 @@
 </template>
 
 <script>
-import {SoundManager, Warrior, Princess, Platform, Enemy, Trap, Bullet} from '@/components/GameClasses.js';
+import {SoundManager, Warrior, Princess, Platform, Enemy, Trap, Bullet, Item} from '@/components/GameClasses.js';
 
 export default {
   data() {
@@ -98,6 +98,7 @@ export default {
       platforms: [],
       enemies: [],
       traps: [],
+      items: [], // 道具
       bullets: [], // 所有活跃的子弹
       hearts: [],
       cameraX: 0,
@@ -233,6 +234,7 @@ export default {
       this.createPlatforms();
       this.createEnemies();
       this.createTraps();
+      this.createItems();
       this.bullets = []; // 重置子弹
 
       this.cameraX = 0;
@@ -501,6 +503,48 @@ export default {
       this.traps.push(new Trap(t4_4, this.height - 50, pitWidth, 100, 'pit'));
     },
 
+    createItems() {
+      this.items = [];
+      const L = this.levelWidth;
+
+      // 定义四个主区域
+      const area1End = L * 0.25;
+      const area2Start = area1End;
+      const area2End = L * 0.5;
+
+      // 区域宽度
+      const area1Width = area1End;
+      const area2Width = area2End - area2Start;
+
+      // 在第一区域末尾放置大宝剑（让玩家较早获得）
+      const swordX = area1Width * 0.8;
+      this.items.push(new Item(swordX, this.height - 130, 'sword'));
+    },
+
+    // 检测道具拾取
+    checkItemPickup() {
+      this.items.forEach((item) => {
+        if (item.collected) return;
+
+        // 碰撞检测
+        const collision =
+          this.warrior.x < item.x + item.width &&
+          this.warrior.x + this.warrior.width > item.x &&
+          this.warrior.y < item.y + item.height + 10 && // 稍微放宽高度检测
+          this.warrior.y + this.warrior.height > item.y;
+
+        if (collision) {
+          item.collected = true;
+
+          // 根据道具类型应用效果
+          if (item.type === 'sword') {
+            this.warrior.equipSword();
+            this.soundManager.playSound(800, 0.2, 'sine'); // 拾取音效
+          }
+        }
+      });
+    },
+
     update(deltaTime) {
       if (this.gameState === 'playing') {
         // 更新计时器（仅在游戏进行中且未触发胜利时）
@@ -527,6 +571,12 @@ export default {
         if (this.princess) {
           this.princess.updateAnimation(deltaTime);
         }
+
+        // 更新道具
+        this.items.forEach((item) => item.update(deltaTime));
+
+        // 检测道具拾取
+        this.checkItemPickup();
 
         // 更新敌人（传递勇士位置给射击怪物，包括 x 和 y 坐标用于瞄准）
         this.enemies.forEach((enemy) => enemy.update(deltaTime, this.warrior.x, this.warrior.y));
@@ -607,7 +657,7 @@ export default {
 
     // 检测攻击是否击中敌人（基于勇士面朝方向的攻击范围）
     checkAttackHit(enemy) {
-      const attackRange = 60; // 攻击范围（像素）
+      const attackRange = this.warrior.getAttackRange(); // 攻击范围（持剑时更大）
       const warrior = this.warrior;
 
       // 根据勇士面朝方向确定攻击区域
@@ -703,6 +753,10 @@ export default {
       }
       if (this.traps.length > 0) {
         this.traps.forEach((trap) => trap.draw(this.ctx));
+      }
+      // 绘制道具
+      if (this.items.length > 0) {
+        this.items.forEach((item) => item.draw(this.ctx));
       }
       if (this.enemies.length > 0) {
         this.enemies.forEach((enemy) => enemy.draw(this.ctx));
