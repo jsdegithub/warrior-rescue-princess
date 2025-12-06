@@ -22,6 +22,11 @@
         <text class="avatar-label">勇士</text>
       </view>
 
+      <!-- 计时器显示 -->
+      <view v-if="gameState === 'playing' || gameState === 'victory'" class="timer-display">
+        <text class="timer-text">{{ formattedTime }}</text>
+      </view>
+
       <!-- 暂停按钮 -->
       <button class="pause-btn" @click="pauseGame">⏸</button>
 
@@ -96,7 +101,11 @@ export default {
       hearts: [],
       cameraX: 0,
 
-      levelWidth: 4000,
+      levelWidth: 8000,
+
+      // 计时系统
+      gameTimer: 0, // 游戏计时（毫秒）
+      timerStarted: false,
       health: 3,
       victoryTriggered: false,
 
@@ -121,6 +130,15 @@ export default {
       warriorImgSrc: '/static/assets/warrior.jpg',
       princessImgSrc: '/static/assets/princess.jpg',
     };
+  },
+  computed: {
+    // 格式化计时器显示（精确到毫秒，如 12.138）
+    formattedTime() {
+      const totalSeconds = this.gameTimer / 1000;
+      const seconds = Math.floor(totalSeconds);
+      const milliseconds = Math.floor((totalSeconds - seconds) * 1000);
+      return `${seconds}.${milliseconds.toString().padStart(3, '0')}`;
+    },
   },
   onLoad() {
     // 使用 nextTick 确保 DOM 已经渲染
@@ -208,7 +226,8 @@ export default {
     initLevel() {
       this.warrior = new Warrior(100, 300, this.warriorImg, this.soundManager, this.warriorSprites, this.warriorImgSrc);
       // 让公主站在地面上：地面在 height - 50，公主高度 60，所以 y = height - 50 - 60
-      this.princess = new Princess(this.levelWidth - 200, this.height - 110, this.princessImg, this.princessImgSrc);
+      // 公主位置设置在关卡末端
+      this.princess = new Princess(this.levelWidth - 300, this.height - 110, this.princessImg, this.princessImgSrc);
 
       this.createPlatforms();
       this.createEnemies();
@@ -219,6 +238,10 @@ export default {
       this.victoryTriggered = false;
       this.gameState = 'playing';
 
+      // 重置计时器
+      this.gameTimer = 0;
+      this.timerStarted = true;
+
       // 播放背景音乐
       if (this.soundManager && !this.soundManager.bgMusic) {
         this.soundManager.playBackgroundMusic('/static/assets/music/bg.mp3');
@@ -228,50 +251,114 @@ export default {
     createPlatforms() {
       this.platforms = [];
 
+      // 地面平台
       this.platforms.push(new Platform(0, this.height - 50, this.levelWidth, 50, 'ground'));
 
+      // 第一区域：起始区（0-1500）
       this.platforms.push(new Platform(200, this.height - 150, 200, 20, 'platform'));
       this.platforms.push(new Platform(450, this.height - 200, 150, 20, 'platform'));
+      this.platforms.push(new Platform(700, this.height - 250, 180, 20, 'platform'));
+      this.platforms.push(new Platform(950, this.height - 180, 160, 20, 'platform'));
+      this.platforms.push(new Platform(1200, this.height - 220, 200, 20, 'platform'));
 
-      for (let i = 0; i < 8; i++) {
-        const x = 700 + i * 250;
-        const y = this.height - 150 - Math.sin(i * 0.5) * 100;
-        this.platforms.push(new Platform(x, y, 180, 20, 'platform'));
+      // 第二区域：中间挑战区（1500-3500）
+      for (let i = 0; i < 10; i++) {
+        const x = 1500 + i * 200;
+        const y = this.height - 150 - Math.sin(i * 0.6) * 120;
+        this.platforms.push(new Platform(x, y, 160, 20, 'platform'));
       }
 
-      this.platforms.push(new Platform(2800, this.height - 300, 200, 20, 'platform'));
-      this.platforms.push(new Platform(3100, this.height - 250, 200, 20, 'platform'));
+      // 第三区域：高空区（3500-5500）
+      this.platforms.push(new Platform(3600, this.height - 300, 200, 20, 'platform'));
+      this.platforms.push(new Platform(3900, this.height - 350, 180, 20, 'platform'));
+      this.platforms.push(new Platform(4200, this.height - 280, 200, 20, 'platform'));
+      this.platforms.push(new Platform(4500, this.height - 320, 160, 20, 'platform'));
+      this.platforms.push(new Platform(4800, this.height - 250, 200, 20, 'platform'));
+      this.platforms.push(new Platform(5100, this.height - 300, 180, 20, 'platform'));
 
-      this.platforms.push(new Platform(3400, this.height - 200, 300, 20, 'platform'));
-      this.platforms.push(new Platform(3750, this.height - 150, 250, 20, 'platform'));
+      // 第四区域：最终挑战区（5500-7500）
+      for (let i = 0; i < 8; i++) {
+        const x = 5500 + i * 250;
+        const y = this.height - 180 - Math.cos(i * 0.5) * 100;
+        this.platforms.push(new Platform(x, y, 170, 20, 'platform'));
+      }
+
+      // 终点区域平台
+      this.platforms.push(new Platform(7500, this.height - 150, 300, 20, 'platform'));
+      this.platforms.push(new Platform(7700, this.height - 100, 300, 20, 'platform'));
     },
 
     createEnemies() {
       this.enemies = [];
 
-      this.enemies.push(new Enemy(800, this.height - 100, 'patrol', 600, 1000));
-      this.enemies.push(new Enemy(1500, this.height - 100, 'patrol', 1300, 1700));
-      this.enemies.push(new Enemy(2200, this.height - 100, 'patrol', 2000, 2400));
+      // 第一区域敌人（0-1500）
+      this.enemies.push(new Enemy(500, this.height - 100, 'patrol', 400, 700));
+      this.enemies.push(new Enemy(900, this.height - 100, 'patrol', 750, 1100));
+      this.enemies.push(new Enemy(1100, this.height - 280, 'fly', 900, 1300));
 
-      this.enemies.push(new Enemy(1200, this.height - 300, 'fly', 1000, 1400));
-      this.enemies.push(new Enemy(2800, this.height - 400, 'fly', 2600, 3000));
+      // 第二区域敌人（1500-3500）
+      this.enemies.push(new Enemy(1600, this.height - 100, 'patrol', 1450, 1800));
+      this.enemies.push(new Enemy(2100, this.height - 100, 'patrol', 1900, 2300));
+      this.enemies.push(new Enemy(2600, this.height - 100, 'patrol', 2400, 2800));
+      this.enemies.push(new Enemy(1900, this.height - 350, 'fly', 1700, 2200));
+      this.enemies.push(new Enemy(2900, this.height - 320, 'fly', 2700, 3100));
+
+      // 第三区域敌人（3500-5500）
+      this.enemies.push(new Enemy(3700, this.height - 100, 'patrol', 3500, 3900));
+      this.enemies.push(new Enemy(4300, this.height - 100, 'patrol', 4100, 4500));
+      this.enemies.push(new Enemy(4000, this.height - 400, 'fly', 3800, 4200));
+      this.enemies.push(new Enemy(4700, this.height - 350, 'fly', 4500, 4900));
+
+      // 第四区域敌人（5500-7500）
+      this.enemies.push(new Enemy(5700, this.height - 100, 'patrol', 5500, 5900));
+      this.enemies.push(new Enemy(6200, this.height - 100, 'patrol', 6000, 6400));
+      this.enemies.push(new Enemy(6700, this.height - 100, 'patrol', 6500, 6900));
+      this.enemies.push(new Enemy(6000, this.height - 350, 'fly', 5800, 6300));
+      this.enemies.push(new Enemy(6900, this.height - 380, 'fly', 6700, 7200));
+
+      // 终点区域守卫
+      this.enemies.push(new Enemy(7300, this.height - 100, 'patrol', 7100, 7500));
     },
 
     createTraps() {
       this.traps = [];
 
-      this.traps.push(new Trap(650, this.height - 50, 200, 100, 'pit'));
-      this.traps.push(new Trap(2500, this.height - 50, 250, 100, 'pit'));
+      // 第一区域陷阱
+      this.traps.push(new Trap(650, this.height - 50, 180, 100, 'pit'));
+      this.traps.push(new Trap(1050, this.height - 70, 120, 20, 'spike'));
 
-      this.traps.push(new Trap(1800, this.height - 70, 150, 20, 'spike'));
-      this.traps.push(new Trap(3200, this.height - 70, 200, 20, 'spike'));
+      // 第二区域陷阱
+      this.traps.push(new Trap(1850, this.height - 70, 150, 20, 'spike'));
+      this.traps.push(new Trap(2300, this.height - 50, 200, 100, 'pit'));
+      this.traps.push(new Trap(2750, this.height - 70, 130, 20, 'spike'));
+      this.traps.push(new Trap(3150, this.height - 50, 180, 100, 'pit'));
+
+      // 第三区域陷阱
+      this.traps.push(new Trap(3850, this.height - 70, 150, 20, 'spike'));
+      this.traps.push(new Trap(4350, this.height - 50, 200, 100, 'pit'));
+      this.traps.push(new Trap(4850, this.height - 70, 140, 20, 'spike'));
+      this.traps.push(new Trap(5250, this.height - 50, 180, 100, 'pit'));
+
+      // 第四区域陷阱
+      this.traps.push(new Trap(5850, this.height - 70, 150, 20, 'spike'));
+      this.traps.push(new Trap(6350, this.height - 50, 180, 100, 'pit'));
+      this.traps.push(new Trap(6800, this.height - 70, 160, 20, 'spike'));
+      this.traps.push(new Trap(7100, this.height - 50, 150, 100, 'pit'));
     },
 
     update(deltaTime) {
       if (this.gameState === 'playing') {
+        // 更新计时器（仅在游戏进行中且未触发胜利时）
+        if (this.timerStarted && !this.victoryTriggered) {
+          this.gameTimer += deltaTime;
+        }
+
         const input = {
-          left: !this.victoryTriggered && (this.keys['ArrowLeft'] || this.keys['a'] || this.keys['A'] || this.touches.left),
-          right: !this.victoryTriggered && (this.keys['ArrowRight'] || this.keys['d'] || this.keys['D'] || this.touches.right),
+          left:
+            !this.victoryTriggered && (this.keys['ArrowLeft'] || this.keys['a'] || this.keys['A'] || this.touches.left),
+          right:
+            !this.victoryTriggered &&
+            (this.keys['ArrowRight'] || this.keys['d'] || this.keys['D'] || this.touches.right),
           jump: this.keys[' '] || this.touches.jump,
           attack: this.keys['j'] || this.keys['J'] || this.touches.attack,
         };
@@ -580,6 +667,26 @@ export default {
 
 .heart.lost {
   opacity: 0.3;
+}
+
+.timer-display {
+  position: absolute;
+  top: 20px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: rgba(0, 0, 0, 0.6);
+  padding: 8px 20px;
+  border-radius: 15px;
+  pointer-events: none;
+}
+
+.timer-text {
+  font-size: 24px;
+  font-weight: bold;
+  color: #ffd700;
+  font-family: 'Courier New', monospace;
+  text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.5);
+  letter-spacing: 1px;
 }
 
 .pause-btn {
