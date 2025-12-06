@@ -513,11 +513,10 @@ export default {
       const area2End = L * 0.5;
 
       // 区域宽度
-      const area1Width = area1End;
       const area2Width = area2End - area2Start;
 
-      // 在第一区域末尾放置大宝剑（让玩家较早获得）
-      const swordX = area1Width * 0.8;
+      // 在第二区域末尾放置大宝剑
+      const swordX = area2Start + area2Width * 0.9;
       this.items.push(new Item(swordX, this.height - 130, 'sword'));
     },
 
@@ -610,22 +609,32 @@ export default {
         });
 
         this.enemies.forEach((enemy) => {
-          if (this.warrior.checkCollision(enemy) && !enemy.defeated) {
-            // 方式1：跳跃踩踏击杀
-            if (this.warrior.vy > 0 && this.warrior.y < enemy.y) {
-              enemy.defeat();
-              this.warrior.vy = -8;
-              this.soundManager.defeat();
-            }
-            // 方式2：攻击击杀（检测攻击状态和攻击范围）
-            else if (this.warrior.isAttacking && this.checkAttackHit(enemy)) {
+          if (!enemy.defeated) {
+            // 方式1：大宝剑攻击（独立检测，基于剑的实际碰撞区域）
+            if (this.warrior.hasSword && this.warrior.isAttacking && this.checkSwordHit(enemy)) {
               enemy.defeat();
               this.soundManager.defeat();
+              return; // 已击杀，跳过后续检测
             }
-            // 否则玩家受伤
-            else if (!this.warrior.isInvulnerable && !this.warrior.isAttacking) {
-              this.warrior.takeDamage();
-              this.health = this.warrior.health;
+
+            // 方式2：身体碰撞检测
+            if (this.warrior.checkCollision(enemy)) {
+              // 跳跃踩踏击杀
+              if (this.warrior.vy > 0 && this.warrior.y < enemy.y) {
+                enemy.defeat();
+                this.warrior.vy = -8;
+                this.soundManager.defeat();
+              }
+              // 无剑时近身攻击击杀（需要身体碰撞）
+              else if (this.warrior.isAttacking && !this.warrior.hasSword) {
+                enemy.defeat();
+                this.soundManager.defeat();
+              }
+              // 否则玩家受伤（非攻击状态且非无敌状态）
+              else if (!this.warrior.isInvulnerable && !this.warrior.isAttacking) {
+                this.warrior.takeDamage();
+                this.health = this.warrior.health;
+              }
             }
           }
         });
@@ -655,27 +664,15 @@ export default {
       );
     },
 
-    // 检测攻击是否击中敌人（基于勇士面朝方向的攻击范围）
-    checkAttackHit(enemy) {
-      const attackRange = this.warrior.getAttackRange(); // 攻击范围（持剑时更大）
-      const warrior = this.warrior;
-
-      // 根据勇士面朝方向确定攻击区域
-      let attackX, attackWidth;
-      if (warrior.direction === 1) {
-        // 面向右：攻击区域在勇士右侧
-        attackX = warrior.x + warrior.width;
-        attackWidth = attackRange;
-      } else {
-        // 面向左：攻击区域在勇士左侧
-        attackX = warrior.x - attackRange;
-        attackWidth = attackRange;
+    // 检测大宝剑是否击中敌人（基于剑的实际碰撞区域）
+    checkSwordHit(enemy) {
+      const swordHitbox = this.warrior.getSwordHitbox();
+      if (!swordHitbox) {
+        return false;
       }
-
-      // 检测攻击区域与敌人是否重叠
-      const hitX = attackX < enemy.x + enemy.width && attackX + attackWidth > enemy.x;
-      const hitY = warrior.y < enemy.y + enemy.height && warrior.y + warrior.height > enemy.y;
-
+      // 检测剑的碰撞区域与敌人是否重叠
+      const hitX = swordHitbox.x < enemy.x + enemy.width && swordHitbox.x + swordHitbox.width > enemy.x;
+      const hitY = swordHitbox.y < enemy.y + enemy.height && swordHitbox.y + swordHitbox.height > enemy.y;
       return hitX && hitY;
     },
 

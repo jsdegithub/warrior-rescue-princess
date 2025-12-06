@@ -174,9 +174,51 @@ export class Warrior {
     this.hasSword = true;
   }
 
-  // 获取攻击范围（持剑时范围更大）
+  // 获取普通攻击范围（无剑时的拳击范围）
   getAttackRange() {
-    return this.hasSword ? 100 : 60;
+    return 60;
+  }
+
+  // 获取大宝剑的碰撞区域（返回剑的实际位置矩形）
+  getSwordHitbox() {
+    if (!this.hasSword || !this.isAttacking) {
+      return null;
+    }
+
+    // 手的位置（剑的旋转中心）
+    const handX = this.x + (this.direction === 1 ? this.width - 5 : 5);
+    const handY = this.y + 35;
+
+    // 计算当前挥动角度
+    let swordAngle = -0.3;
+    const swingProgress = (300 - this.attackTime) / 300;
+    const swingAngle = Math.sin(swingProgress * Math.PI) * 2.5;
+    swordAngle += swingAngle;
+
+    // 剑的长度（从手到剑尖约 55 像素）
+    const swordLength = 60;
+    const swordWidth = 20; // 碰撞检测用的宽度
+
+    // 计算剑尖在世界坐标系中的位置
+    // 考虑方向：向右时角度不变，向左时水平翻转
+    const actualAngle = this.direction === 1 ? swordAngle - Math.PI / 2 : Math.PI / 2 - swordAngle;
+
+    // 剑尖位置
+    const tipX = handX + Math.cos(actualAngle) * swordLength * this.direction;
+    const tipY = handY + Math.sin(actualAngle) * swordLength;
+
+    // 返回一个覆盖剑身的碰撞区域（从手到剑尖的矩形）
+    const minX = Math.min(handX, tipX) - swordWidth / 2;
+    const maxX = Math.max(handX, tipX) + swordWidth / 2;
+    const minY = Math.min(handY, tipY) - swordWidth / 2;
+    const maxY = Math.max(handY, tipY) + swordWidth / 2;
+
+    return {
+      x: minX,
+      y: minY,
+      width: maxX - minX,
+      height: maxY - minY,
+    };
   }
 
   update(deltaTime, input, platforms, traps, levelWidth = Infinity) {
