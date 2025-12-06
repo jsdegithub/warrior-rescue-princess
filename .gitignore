@@ -29,3 +29,5 @@ Thumbs.db
 # env & secrets
 .env
 .env.*
+
+wx_upload_secretkey

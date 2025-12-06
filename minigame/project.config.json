@@ -1,0 +1,13 @@
+{
+  "description": "钱程似金-拯救公主",
+  "appid": "wxbb62b5252415fa8a",
+  "projectname": "warrior-rescue-princess",
+  "setting": {
+    "urlCheck": false,
+    "es6": true,
+    "postcss": true,
+    "minified": true,
+    "newFeature": true
+  },
+  "compileType": "game"
+}
