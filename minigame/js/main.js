@@ -10,14 +10,18 @@ class Game {
     this.canvas = wx.createCanvas();
     this.ctx = this.canvas.getContext('2d');
 
-    // 获取屏幕尺寸
+    // 获取屏幕尺寸和设备像素比
     const systemInfo = wx.getSystemInfoSync();
     this.width = systemInfo.windowWidth;
     this.height = systemInfo.windowHeight;
+    this.pixelRatio = systemInfo.pixelRatio || 2; // 设备像素比，用于高清渲染
 
-    // 设置画布尺寸
-    this.canvas.width = this.width;
-    this.canvas.height = this.height;
+    // 设置画布实际像素尺寸（乘以像素比以提高清晰度）
+    this.canvas.width = this.width * this.pixelRatio;
+    this.canvas.height = this.height * this.pixelRatio;
+
+    // 缩放上下文以匹配逻辑尺寸
+    this.ctx.scale(this.pixelRatio, this.pixelRatio);
 
     // 游戏状态
     this.gameState = 'menu'; // menu, playing, paused, victory, gameover
@@ -60,6 +64,12 @@ class Game {
     // 动画帧
     this.lastTime = 0;
     this.animationFrame = null;
+
+    // 加载头像图片
+    this.warriorAvatar = wx.createImage();
+    this.warriorAvatar.src = 'images/warrior.jpg';
+    this.princessAvatar = wx.createImage();
+    this.princessAvatar.src = 'images/princess.jpg';
 
     // 初始化触摸控制
     this.initTouchControls();
@@ -773,6 +783,9 @@ class Game {
 
   // 渲染游戏
   render() {
+    // 重置变换矩阵并应用像素比缩放（确保高清渲染）
+    this.ctx.setTransform(this.pixelRatio, 0, 0, this.pixelRatio, 0, 0);
+
     // 清屏
     this.ctx.fillStyle = '#87CEEB';
     this.ctx.fillRect(0, 0, this.width, this.height);
@@ -1043,6 +1056,12 @@ class Game {
   }
 
   renderUI() {
+    // 绘制勇士头像（左侧）
+    this.drawAvatar(this.warriorAvatar, 15, 60, '勇士', '#4169E1');
+
+    // 绘制公主头像（右侧）
+    this.drawAvatar(this.princessAvatar, this.width - 75, 60, '公主', '#FFD700');
+
     // 生命值
     for (let i = 0; i < 3; i++) {
       this.ctx.fillStyle = i < this.health ? '#f5576c' : 'rgba(245, 87, 108, 0.3)';
@@ -1183,6 +1202,77 @@ class Game {
     this.ctx.fillStyle = '#FFFFFF';
     this.ctx.font = `bold ${Math.min(16, this.height / 15)}px Arial`;
     this.ctx.fillText(text, this.width / 2, y + 5);
+  }
+
+  // 绘制头像（带圆形裁剪和标签）
+  drawAvatar(image, x, y, label, borderColor) {
+    const avatarSize = 60; // 增大头像尺寸
+    const centerX = x + avatarSize / 2;
+    const centerY = y + avatarSize / 2;
+    const radius = avatarSize / 2;
+
+    this.ctx.save();
+
+    // 启用图像平滑以提高质量
+    this.ctx.imageSmoothingEnabled = true;
+    this.ctx.imageSmoothingQuality = 'high';
+
+    // 绘制圆形裁剪区域
+    this.ctx.beginPath();
+    this.ctx.arc(centerX, centerY, radius, 0, Math.PI * 2);
+    this.ctx.closePath();
+    this.ctx.clip();
+
+    // 绘制头像图片（从原图中心裁剪正方形区域）
+    if (image && image.complete && image.width > 0) {
+      // 计算源图片的裁剪区域（取中心正方形）
+      const srcSize = Math.min(image.width, image.height);
+      const srcX = (image.width - srcSize) / 2;
+      const srcY = (image.height - srcSize) / 2;
+
+      // 从源图片中心裁剪，绘制到目标位置
+      this.ctx.drawImage(
+        image,
+        srcX,
+        srcY,
+        srcSize,
+        srcSize, // 源图片区域
+        x,
+        y,
+        avatarSize,
+        avatarSize // 目标区域
+      );
+    } else {
+      // 如果图片未加载，显示占位
+      this.ctx.fillStyle = borderColor;
+      this.ctx.fillRect(x, y, avatarSize, avatarSize);
+    }
+
+    this.ctx.restore();
+
+    // 绘制边框
+    this.ctx.strokeStyle = borderColor;
+    this.ctx.lineWidth = 3;
+    this.ctx.beginPath();
+    this.ctx.arc(centerX, centerY, radius, 0, Math.PI * 2);
+    this.ctx.stroke();
+
+    // 绘制标签背景
+    const labelWidth = 44;
+    const labelHeight = 20;
+    const labelX = centerX - labelWidth / 2;
+    const labelY = y + avatarSize + 5;
+
+    this.ctx.fillStyle = 'rgba(0, 0, 0, 0.6)';
+    this.roundRect(labelX, labelY, labelWidth, labelHeight, 10);
+    this.ctx.fill();
+
+    // 绘制标签文字
+    this.ctx.fillStyle = '#FFFFFF';
+    this.ctx.font = 'bold 13px Arial';
+    this.ctx.textAlign = 'center';
+    this.ctx.fillText(label, centerX, labelY + 15);
+    this.ctx.textAlign = 'left';
   }
 
   // 绘制圆角矩形
