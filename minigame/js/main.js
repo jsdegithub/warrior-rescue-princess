@@ -201,8 +201,8 @@ class Game {
           }
         }
 
-        // 检测暂停按钮（位置下移避开小程序退出按钮）
-        if (this.isPointInRect(touch.clientX, touch.clientY, {x: this.width - 55, y: 70, width: 35, height: 35})) {
+        // 检测暂停按钮（血条左侧）
+        if (this.isPointInRect(touch.clientX, touch.clientY, {x: 15, y: 15, width: 35, height: 35})) {
           this.pauseGame();
         }
       }
@@ -1069,11 +1069,11 @@ class Game {
     // 绘制公主头像（右侧，带悬浮效果）
     this.drawAvatar(this.princessAvatar, this.width - 70, 55 + floatOffset, '公主', '#FFD700');
 
-    // 生命值
+    // 生命值（右移给暂停按钮腾出空间）
     for (let i = 0; i < 3; i++) {
       this.ctx.fillStyle = i < this.health ? '#f5576c' : 'rgba(245, 87, 108, 0.3)';
       this.ctx.font = '30px Arial';
-      this.ctx.fillText('❤', 20 + i * 40, 45);
+      this.ctx.fillText('❤', 60 + i * 40, 42);
     }
 
     // 计时器
@@ -1091,15 +1091,15 @@ class Game {
     this.ctx.fillText(timeText, this.width / 2, 45);
     this.ctx.textAlign = 'left';
 
-    // 暂停按钮（位置下移避开小程序退出按钮）
+    // 暂停按钮（血条左侧）
     this.ctx.fillStyle = 'rgba(0, 0, 0, 0.5)';
-    this.roundRect(this.width - 55, 70, 35, 35, 10);
+    this.roundRect(15, 15, 35, 35, 10);
     this.ctx.fill();
 
     this.ctx.fillStyle = '#FFFFFF';
     this.ctx.font = '24px Arial';
     this.ctx.textAlign = 'center';
-    this.ctx.fillText('⏸', this.width - 37, 97);
+    this.ctx.fillText('⏸', 33, 42);
     this.ctx.textAlign = 'left';
 
     // 虚拟按钮（增大尺寸和字体）
