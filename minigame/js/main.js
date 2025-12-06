@@ -202,7 +202,7 @@ class Game {
         }
 
         // 检测暂停按钮（血条左侧）
-        if (this.isPointInRect(touch.clientX, touch.clientY, {x: 15, y: 15, width: 35, height: 35})) {
+        if (this.isPointInRect(touch.clientX, touch.clientY, {x: 15, y: 18, width: 28, height: 28})) {
           this.pauseGame();
         }
       }
@@ -1091,16 +1091,15 @@ class Game {
     this.ctx.fillText(timeText, this.width / 2, 45);
     this.ctx.textAlign = 'left';
 
-    // 暂停按钮（血条左侧）
+    // 暂停按钮（血条左侧）- 用Canvas绘制避免emoji渲染问题
     this.ctx.fillStyle = 'rgba(0, 0, 0, 0.5)';
-    this.roundRect(15, 15, 35, 35, 10);
+    this.roundRect(15, 18, 28, 28, 8);
     this.ctx.fill();
 
+    // 绘制暂停图标（两条竖线）
     this.ctx.fillStyle = '#FFFFFF';
-    this.ctx.font = '24px Arial';
-    this.ctx.textAlign = 'center';
-    this.ctx.fillText('⏸', 33, 42);
-    this.ctx.textAlign = 'left';
+    this.ctx.fillRect(22, 25, 4, 14); // 左竖线
+    this.ctx.fillRect(31, 25, 4, 14); // 右竖线
 
     // 虚拟按钮（增大尺寸和字体）
     this.touchButtons.forEach((btn) => {
