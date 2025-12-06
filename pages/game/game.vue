@@ -81,7 +81,7 @@
 </template>
 
 <script>
-import {SoundManager, Warrior, Princess, Platform, Enemy, Trap} from '@/components/GameClasses.js';
+import {SoundManager, Warrior, Princess, Platform, Enemy, Trap, Bullet} from '@/components/GameClasses.js';
 
 export default {
   data() {
@@ -98,6 +98,7 @@ export default {
       platforms: [],
       enemies: [],
       traps: [],
+      bullets: [], // 所有活跃的子弹
       hearts: [],
       cameraX: 0,
 
@@ -232,6 +233,7 @@ export default {
       this.createPlatforms();
       this.createEnemies();
       this.createTraps();
+      this.bullets = []; // 重置子弹
 
       this.cameraX = 0;
       this.health = this.warrior.health;
@@ -365,21 +367,41 @@ export default {
       const e2_3 = area2Start + area2Width * 0.55;
       const e2_4 = area2Start + area2Width * 0.2;
       const e2_5 = area2Start + area2Width * 0.7;
+      const e2_6 = area2Start + area2Width * 0.85; // 射击怪物位置
+      const e2_7 = area2Start + area2Width * 0.45; // 飞行射击怪物位置
       this.enemies.push(new Enemy(e2_1, this.height - 100, 'patrol', e2_1 - patrolRange, e2_1 + patrolRange));
       this.enemies.push(new Enemy(e2_2, this.height - 100, 'patrol', e2_2 - patrolRange, e2_2 + patrolRange));
       this.enemies.push(new Enemy(e2_3, this.height - 100, 'patrol', e2_3 - patrolRange, e2_3 + patrolRange));
       this.enemies.push(new Enemy(e2_4, this.height - 350, 'fly', e2_4 - patrolRange * 2.5, e2_4 + patrolRange * 2.5));
       this.enemies.push(new Enemy(e2_5, this.height - 320, 'fly', e2_5 - patrolRange * 2, e2_5 + patrolRange * 2));
+      // 射击怪物 - 站在平台上
+      this.enemies.push(
+        new Enemy(e2_6, this.height - 100, 'shooter', e2_6 - patrolRange * 0.5, e2_6 + patrolRange * 0.5)
+      );
+      // 飞行射击怪物 - 飞龙
+      this.enemies.push(
+        new Enemy(e2_7, this.height - 280, 'fly_shooter', e2_7 - patrolRange * 2, e2_7 + patrolRange * 2)
+      );
 
       // ========== 第三区域敌人 ==========
       const e3_1 = area3Start + area3Width * 0.1;
       const e3_2 = area3Start + area3Width * 0.4;
       const e3_3 = area3Start + area3Width * 0.25;
       const e3_4 = area3Start + area3Width * 0.6;
+      const e3_5 = area3Start + area3Width * 0.75; // 射击怪物位置
+      const e3_6 = area3Start + area3Width * 0.5; // 飞行射击怪物位置
       this.enemies.push(new Enemy(e3_1, this.height - 100, 'patrol', e3_1 - patrolRange, e3_1 + patrolRange));
       this.enemies.push(new Enemy(e3_2, this.height - 100, 'patrol', e3_2 - patrolRange, e3_2 + patrolRange));
       this.enemies.push(new Enemy(e3_3, this.height - 400, 'fly', e3_3 - patrolRange * 2, e3_3 + patrolRange * 2));
       this.enemies.push(new Enemy(e3_4, this.height - 350, 'fly', e3_4 - patrolRange * 2, e3_4 + patrolRange * 2));
+      // 射击怪物
+      this.enemies.push(
+        new Enemy(e3_5, this.height - 100, 'shooter', e3_5 - patrolRange * 0.5, e3_5 + patrolRange * 0.5)
+      );
+      // 飞行射击怪物 - 飞龙
+      this.enemies.push(
+        new Enemy(e3_6, this.height - 320, 'fly_shooter', e3_6 - patrolRange * 2.5, e3_6 + patrolRange * 2.5)
+      );
 
       // ========== 第四区域敌人 ==========
       const e4_1 = area4Start + area4Width * 0.1;
@@ -387,11 +409,29 @@ export default {
       const e4_3 = area4Start + area4Width * 0.6;
       const e4_4 = area4Start + area4Width * 0.25;
       const e4_5 = area4Start + area4Width * 0.7;
+      const e4_6 = area4Start + area4Width * 0.5; // 射击怪物位置
+      const e4_7 = area4Start + area4Width * 0.85; // 射击怪物位置
+      const e4_8 = area4Start + area4Width * 0.4; // 飞行射击怪物位置
+      const e4_9 = area4Start + area4Width * 0.75; // 飞行射击怪物位置
       this.enemies.push(new Enemy(e4_1, this.height - 100, 'patrol', e4_1 - patrolRange, e4_1 + patrolRange));
       this.enemies.push(new Enemy(e4_2, this.height - 100, 'patrol', e4_2 - patrolRange, e4_2 + patrolRange));
       this.enemies.push(new Enemy(e4_3, this.height - 100, 'patrol', e4_3 - patrolRange, e4_3 + patrolRange));
       this.enemies.push(new Enemy(e4_4, this.height - 350, 'fly', e4_4 - patrolRange * 2.5, e4_4 + patrolRange * 2.5));
       this.enemies.push(new Enemy(e4_5, this.height - 380, 'fly', e4_5 - patrolRange * 2.5, e4_5 + patrolRange * 2.5));
+      // 射击怪物（最后区域增加难度，放2个）
+      this.enemies.push(
+        new Enemy(e4_6, this.height - 100, 'shooter', e4_6 - patrolRange * 0.5, e4_6 + patrolRange * 0.5)
+      );
+      this.enemies.push(
+        new Enemy(e4_7, this.height - 100, 'shooter', e4_7 - patrolRange * 0.5, e4_7 + patrolRange * 0.5)
+      );
+      // 飞行射击怪物 - 飞龙（最后区域放2只增加难度）
+      this.enemies.push(
+        new Enemy(e4_8, this.height - 300, 'fly_shooter', e4_8 - patrolRange * 2, e4_8 + patrolRange * 2)
+      );
+      this.enemies.push(
+        new Enemy(e4_9, this.height - 350, 'fly_shooter', e4_9 - patrolRange * 2.5, e4_9 + patrolRange * 2.5)
+      );
 
       // 终点区域守卫
       const guardPos = L - L * 0.0875;
@@ -488,7 +528,36 @@ export default {
           this.princess.updateAnimation(deltaTime);
         }
 
-        this.enemies.forEach((enemy) => enemy.update(deltaTime));
+        // 更新敌人（传递勇士位置给射击怪物，包括 x 和 y 坐标用于瞄准）
+        this.enemies.forEach((enemy) => enemy.update(deltaTime, this.warrior.x, this.warrior.y));
+
+        // 处理射击怪物发射子弹（支持 shooter 和 fly_shooter）
+        this.enemies.forEach((enemy) => {
+          if ((enemy.type === 'shooter' || enemy.type === 'fly_shooter') && !enemy.defeated) {
+            const bullet = enemy.shoot();
+            if (bullet) {
+              this.bullets.push(bullet);
+            }
+          }
+        });
+
+        // 更新子弹
+        this.bullets.forEach((bullet) => bullet.update(deltaTime));
+        // 移除超出范围的子弹
+        this.bullets = this.bullets.filter(
+          (bullet) => bullet.active && !bullet.isOutOfBounds(this.cameraX, this.width)
+        );
+
+        // 检测子弹与勇士的碰撞
+        this.bullets.forEach((bullet) => {
+          if (bullet.active && this.checkBulletHit(bullet)) {
+            bullet.active = false;
+            if (!this.warrior.isInvulnerable) {
+              this.warrior.takeDamage();
+              this.health = this.warrior.health;
+            }
+          }
+        });
 
         this.enemies.forEach((enemy) => {
           if (this.warrior.checkCollision(enemy) && !enemy.defeated) {
@@ -524,6 +593,16 @@ export default {
           heart.rotation += heart.rotationSpeed;
         });
       }
+    },
+
+    // 检测子弹是否击中勇士
+    checkBulletHit(bullet) {
+      return (
+        bullet.x < this.warrior.x + this.warrior.width &&
+        bullet.x + bullet.width > this.warrior.x &&
+        bullet.y < this.warrior.y + this.warrior.height &&
+        bullet.y + bullet.height > this.warrior.y
+      );
     },
 
     // 检测攻击是否击中敌人（基于勇士面朝方向的攻击范围）
@@ -627,6 +706,10 @@ export default {
       }
       if (this.enemies.length > 0) {
         this.enemies.forEach((enemy) => enemy.draw(this.ctx));
+      }
+      // 绘制子弹
+      if (this.bullets.length > 0) {
+        this.bullets.forEach((bullet) => bullet.draw(this.ctx));
       }
       if (this.princess) {
         this.princess.draw(this.ctx);

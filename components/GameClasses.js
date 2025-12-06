@@ -651,7 +651,7 @@ export class Enemy {
 		this.type = type;
 		this.minX = minX;
 		this.maxX = maxX;
-		this.vx = type === 'fly' ? 2 : 1;
+		this.vx = type === 'fly' ? 2 : (type === 'shooter' ? 0.5 : (type === 'fly_shooter' ? 1.5 : 1));
 		this.vy = 0;
 		this.defeated = false;
 		this.direction = 1;
@@ -661,10 +661,31 @@ export class Enemy {
 			this.flyAmplitude = 50;
 			this.startY = y;
 		}
+
+		// 射击怪物属性
+		if (type === 'shooter') {
+			this.shootCooldown = 0; // 射击冷却时间
+			this.shootInterval = 2000; // 每 2 秒发射一次
+			this.bullets = []; // 该怪物发射的子弹
+		}
+
+		// 飞行射击怪物属性（结合飞行和射击）
+		if (type === 'fly_shooter') {
+			this.flyTime = 0;
+			this.flyAmplitude = 40;
+			this.startY = y;
+			this.shootCooldown = 0;
+			this.shootInterval = 2500; // 每 2.5 秒发射一次
+			this.bullets = [];
+		}
 	}
 
-	update(deltaTime) {
+	update(deltaTime, warriorX = null, warriorY = null) {
 		if (this.defeated) return;
+
+		// 存储勇士位置（用于瞄准射击）
+		this.targetX = warriorX;
+		this.targetY = warriorY;
 
 		if (this.type === 'patrol') {
 			this.x += this.vx * this.direction;
@@ -680,7 +701,89 @@ export class Enemy {
 			if (this.x >= this.maxX || this.x <= this.minX) {
 				this.direction *= -1;
 			}
+		} else if (this.type === 'shooter') {
+			// 射击怪物：缓慢移动
+			this.x += this.vx * this.direction;
+
+			if (this.x <= this.minX || this.x >= this.maxX) {
+				this.direction *= -1;
+			}
+
+			// 根据勇士位置调整面朝方向
+			if (warriorX !== null) {
+				this.direction = warriorX > this.x ? 1 : -1;
+			}
+
+			// 更新射击冷却
+			this.shootCooldown -= deltaTime;
+		} else if (this.type === 'fly_shooter') {
+			// 飞行射击怪物：飞行 + 射击
+			this.x += this.vx * this.direction;
+			this.flyTime += deltaTime * 0.003;
+			this.y = this.startY + Math.sin(this.flyTime) * this.flyAmplitude;
+
+			if (this.x >= this.maxX || this.x <= this.minX) {
+				this.direction *= -1;
+			}
+
+			// 根据勇士位置调整面朝方向（用于射击）
+			if (warriorX !== null) {
+				this.shootDirection = warriorX > this.x ? 1 : -1;
+			} else {
+				this.shootDirection = this.direction;
+			}
+
+			// 更新射击冷却
+			this.shootCooldown -= deltaTime;
 		}
+
+		// 更新子弹
+		if (this.bullets) {
+			this.bullets.forEach(bullet => bullet.update(deltaTime));
+			// 移除失效的子弹
+			this.bullets = this.bullets.filter(bullet => bullet.active);
+		}
+	}
+
+	// 射击方法 - 返回新创建的子弹
+	shoot() {
+		// 支持 shooter 和 fly_shooter 类型
+		if ((this.type !== 'shooter' && this.type !== 'fly_shooter') || this.shootCooldown > 0 || this.defeated) {
+			return null;
+		}
+
+		this.shootCooldown = this.shootInterval;
+
+		// 确定射击方向
+		const shootDir = this.type === 'fly_shooter' ? (this.shootDirection || this.direction) : this.direction;
+
+		// 从怪物中心发射子弹
+		const bulletX = shootDir === 1 ? this.x + this.width : this.x - 12;
+		const bulletY = this.y + this.height / 2 - 4;
+
+		// fly_shooter 的子弹速度稍快
+		const bulletSpeed = this.type === 'fly_shooter' ? 5 : 4;
+
+		// 计算垂直速度（fly_shooter 朝向勇士射击）
+		let bulletVy = 0;
+		if (this.type === 'fly_shooter' && this.targetX !== null && this.targetY !== null) {
+			// 计算从怪物到勇士的方向向量
+			const dx = this.targetX - this.x;
+			const dy = this.targetY - this.y;
+			const distance = Math.sqrt(dx * dx + dy * dy);
+			
+			if (distance > 0) {
+				// 根据水平速度计算对应的垂直速度，使子弹朝向勇士
+				// bulletVy / bulletSpeed = dy / |dx|
+				const normalizedDy = dy / Math.abs(dx);
+				bulletVy = normalizedDy * bulletSpeed;
+				
+				// 限制垂直速度，避免子弹太陡
+				bulletVy = Math.max(-4, Math.min(4, bulletVy));
+			}
+		}
+
+		return new Bullet(bulletX, bulletY, shootDir, bulletSpeed, bulletVy);
 	}
 
 	defeat() {
@@ -691,6 +794,18 @@ export class Enemy {
 		if (this.defeated) return;
 
 		ctx.fillStyle = '#8B0000';
+
+		// 射击怪物单独绘制
+		if (this.type === 'shooter') {
+			this.drawShooter(ctx);
+			return;
+		}
+
+		// 飞行射击怪物单独绘制
+		if (this.type === 'fly_shooter') {
+			this.drawFlyShooter(ctx);
+			return;
+		}
 
 		if (this.type === 'fly') {
 			const centerX = this.x + this.width / 2;
@@ -782,6 +897,264 @@ export class Enemy {
 			ctx.arc(centerX, this.y + 28, 8, 0, Math.PI);
 			ctx.stroke();
 		}
+	}
+
+	// 绘制射击怪物
+	drawShooter(ctx) {
+		const centerX = this.x + this.width / 2;
+		const centerY = this.y + this.height / 2;
+
+		// 身体（紫色魔法师风格）
+		ctx.fillStyle = '#4B0082';
+		const bodyX = this.x + 5;
+		const bodyY = this.y + 10;
+		const bodyW = 35;
+		const bodyH = 35;
+		const radius = 8;
+
+		// 绘制圆角矩形身体
+		ctx.beginPath();
+		ctx.moveTo(bodyX + radius, bodyY);
+		ctx.lineTo(bodyX + bodyW - radius, bodyY);
+		ctx.quadraticCurveTo(bodyX + bodyW, bodyY, bodyX + bodyW, bodyY + radius);
+		ctx.lineTo(bodyX + bodyW, bodyY + bodyH - radius);
+		ctx.quadraticCurveTo(bodyX + bodyW, bodyY + bodyH, bodyX + bodyW - radius, bodyY + bodyH);
+		ctx.lineTo(bodyX + radius, bodyY + bodyH);
+		ctx.quadraticCurveTo(bodyX, bodyY + bodyH, bodyX, bodyY + bodyH - radius);
+		ctx.lineTo(bodyX, bodyY + radius);
+		ctx.quadraticCurveTo(bodyX, bodyY, bodyX + radius, bodyY);
+		ctx.closePath();
+		ctx.fill();
+
+		// 魔法帽子
+		ctx.fillStyle = '#2E0854';
+		ctx.beginPath();
+		ctx.moveTo(centerX - 15, this.y + 12);
+		ctx.lineTo(centerX, this.y - 15);
+		ctx.lineTo(centerX + 15, this.y + 12);
+		ctx.closePath();
+		ctx.fill();
+
+		// 帽檐
+		ctx.fillStyle = '#2E0854';
+		ctx.beginPath();
+		ctx.arc(centerX, this.y + 12, 18, Math.PI, 2 * Math.PI);
+		ctx.fill();
+
+		// 眼睛（发光效果）
+		ctx.fillStyle = '#FF00FF';
+		ctx.beginPath();
+		ctx.arc(this.x + 15, this.y + 22, 4, 0, Math.PI * 2);
+		ctx.arc(this.x + 30, this.y + 22, 4, 0, Math.PI * 2);
+		ctx.fill();
+
+		// 眼睛内核
+		ctx.fillStyle = '#FFFFFF';
+		ctx.beginPath();
+		ctx.arc(this.x + 15, this.y + 22, 2, 0, Math.PI * 2);
+		ctx.arc(this.x + 30, this.y + 22, 2, 0, Math.PI * 2);
+		ctx.fill();
+
+		// 魔法杖/手臂（指向发射方向）
+		ctx.strokeStyle = '#8B4513';
+		ctx.lineWidth = 4;
+		ctx.beginPath();
+		if (this.direction === 1) {
+			ctx.moveTo(this.x + 35, this.y + 30);
+			ctx.lineTo(this.x + 50, this.y + 25);
+		} else {
+			ctx.moveTo(this.x + 10, this.y + 30);
+			ctx.lineTo(this.x - 5, this.y + 25);
+		}
+		ctx.stroke();
+
+		// 魔法杖头部发光
+		ctx.fillStyle = this.shootCooldown < 500 ? '#FF4500' : '#FFD700';
+		ctx.beginPath();
+		if (this.direction === 1) {
+			ctx.arc(this.x + 52, this.y + 24, 5, 0, Math.PI * 2);
+		} else {
+			ctx.arc(this.x - 7, this.y + 24, 5, 0, Math.PI * 2);
+		}
+		ctx.fill();
+	}
+
+	// 绘制飞行射击怪物（龙形怪物）
+	drawFlyShooter(ctx) {
+		const centerX = this.x + this.width / 2;
+		const centerY = this.y + this.height / 2;
+		const shootDir = this.shootDirection || this.direction;
+
+		// 翅膀扇动动画
+		const wingFlap = Math.sin(Date.now() * 0.015) * 12;
+
+		// 身体（深绿色龙形）
+		ctx.fillStyle = '#006400';
+
+		// 绘制椭圆身体
+		ctx.save();
+		ctx.translate(centerX, centerY);
+		ctx.scale(1.3, 1);
+		ctx.beginPath();
+		ctx.arc(0, 0, 15, 0, Math.PI * 2);
+		ctx.fill();
+		ctx.restore();
+
+		// 龙翼（左翼）
+		ctx.fillStyle = '#228B22';
+		ctx.beginPath();
+		ctx.moveTo(centerX - 8, centerY - 5);
+		ctx.quadraticCurveTo(centerX - 30, centerY - 25 + wingFlap, centerX - 35, centerY - 5);
+		ctx.quadraticCurveTo(centerX - 25, centerY + 5, centerX - 8, centerY);
+		ctx.closePath();
+		ctx.fill();
+
+		// 龙翼（右翼）
+		ctx.beginPath();
+		ctx.moveTo(centerX + 8, centerY - 5);
+		ctx.quadraticCurveTo(centerX + 30, centerY - 25 + wingFlap, centerX + 35, centerY - 5);
+		ctx.quadraticCurveTo(centerX + 25, centerY + 5, centerX + 8, centerY);
+		ctx.closePath();
+		ctx.fill();
+
+		// 龙头
+		ctx.fillStyle = '#006400';
+		const headOffsetX = shootDir * 12;
+		ctx.beginPath();
+		ctx.arc(centerX + headOffsetX, centerY - 2, 10, 0, Math.PI * 2);
+		ctx.fill();
+
+		// 龙角
+		ctx.fillStyle = '#8B4513';
+		ctx.beginPath();
+		ctx.moveTo(centerX + headOffsetX - 5, centerY - 10);
+		ctx.lineTo(centerX + headOffsetX - 8, centerY - 20);
+		ctx.lineTo(centerX + headOffsetX - 2, centerY - 12);
+		ctx.closePath();
+		ctx.fill();
+
+		ctx.beginPath();
+		ctx.moveTo(centerX + headOffsetX + 5, centerY - 10);
+		ctx.lineTo(centerX + headOffsetX + 8, centerY - 20);
+		ctx.lineTo(centerX + headOffsetX + 2, centerY - 12);
+		ctx.closePath();
+		ctx.fill();
+
+		// 眼睛（红色发光）
+		ctx.fillStyle = '#FF0000';
+		ctx.beginPath();
+		ctx.arc(centerX + headOffsetX - 3, centerY - 5, 3, 0, Math.PI * 2);
+		ctx.arc(centerX + headOffsetX + 3, centerY - 5, 3, 0, Math.PI * 2);
+		ctx.fill();
+
+		// 眼睛内核
+		ctx.fillStyle = '#FFFF00';
+		ctx.beginPath();
+		ctx.arc(centerX + headOffsetX - 3, centerY - 5, 1.5, 0, Math.PI * 2);
+		ctx.arc(centerX + headOffsetX + 3, centerY - 5, 1.5, 0, Math.PI * 2);
+		ctx.fill();
+
+		// 嘴巴/火焰喷口（指向射击方向）
+		const mouthX = centerX + headOffsetX + shootDir * 10;
+		const mouthY = centerY;
+
+		// 嘴巴发光效果（即将发射时变亮）
+		if (this.shootCooldown < 600) {
+			ctx.fillStyle = 'rgba(255, 100, 0, 0.6)';
+			ctx.beginPath();
+			ctx.arc(mouthX, mouthY, 8, 0, Math.PI * 2);
+			ctx.fill();
+		}
+
+		// 火焰喷口
+		ctx.fillStyle = this.shootCooldown < 400 ? '#FF4500' : '#FF8C00';
+		ctx.beginPath();
+		ctx.arc(mouthX, mouthY, 4, 0, Math.PI * 2);
+		ctx.fill();
+
+		// 尾巴
+		ctx.strokeStyle = '#006400';
+		ctx.lineWidth = 4;
+		ctx.beginPath();
+		ctx.moveTo(centerX - shootDir * 15, centerY + 5);
+		ctx.quadraticCurveTo(
+			centerX - shootDir * 25,
+			centerY + 15,
+			centerX - shootDir * 30,
+			centerY + 5
+		);
+		ctx.stroke();
+
+		// 尾巴尖
+		ctx.fillStyle = '#8B4513';
+		ctx.beginPath();
+		ctx.moveTo(centerX - shootDir * 30, centerY + 5);
+		ctx.lineTo(centerX - shootDir * 38, centerY + 2);
+		ctx.lineTo(centerX - shootDir * 35, centerY + 10);
+		ctx.closePath();
+		ctx.fill();
+	}
+}
+
+// 子弹类
+export class Bullet {
+	constructor(x, y, direction, speed = 5, vy = 0) {
+		this.x = x;
+		this.y = y;
+		this.width = 12;
+		this.height = 8;
+		this.direction = direction; // 1 向右, -1 向左
+		this.speed = speed;
+		this.vy = vy; // 垂直速度（用于飞龙朝向勇士射击）
+		this.active = true;
+	}
+
+	update(deltaTime) {
+		if (!this.active) return;
+		this.x += this.speed * this.direction;
+		this.y += this.vy;
+	}
+
+	// 检测是否超出屏幕范围
+	isOutOfBounds(cameraX, screenWidth) {
+		return this.x < cameraX - 100 || this.x > cameraX + screenWidth + 100;
+	}
+
+	draw(ctx) {
+		if (!this.active) return;
+
+		// 绘制火球/能量球样式的子弹
+		const centerX = this.x + this.width / 2;
+		const centerY = this.y + this.height / 2;
+
+		// 外发光效果
+		ctx.fillStyle = 'rgba(255, 100, 0, 0.3)';
+		ctx.beginPath();
+		ctx.arc(centerX, centerY, 10, 0, Math.PI * 2);
+		ctx.fill();
+
+		// 子弹主体（火焰色渐变效果）
+		ctx.fillStyle = '#FF4500';
+		ctx.beginPath();
+		ctx.arc(centerX, centerY, 6, 0, Math.PI * 2);
+		ctx.fill();
+
+		// 子弹核心
+		ctx.fillStyle = '#FFD700';
+		ctx.beginPath();
+		ctx.arc(centerX, centerY, 3, 0, Math.PI * 2);
+		ctx.fill();
+
+		// 尾焰效果
+		ctx.fillStyle = 'rgba(255, 69, 0, 0.5)';
+		const tailX = centerX - this.direction * 8;
+		ctx.beginPath();
+		ctx.moveTo(centerX - this.direction * 4, centerY);
+		ctx.lineTo(tailX, centerY - 4);
+		ctx.lineTo(tailX - this.direction * 4, centerY);
+		ctx.lineTo(tailX, centerY + 4);
+		ctx.closePath();
+		ctx.fill();
 	}
 }
 
