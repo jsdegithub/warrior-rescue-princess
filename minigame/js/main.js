@@ -2,26 +2,26 @@
  * 主游戏逻辑 - 微信小游戏版
  */
 import SoundManager from './audio.js';
-import { Warrior, Princess, Platform, Enemy, Trap, Bullet, Item } from './classes.js';
+import {Warrior, Princess, Platform, Enemy, Trap, Bullet, Item} from './classes.js';
 
 class Game {
   constructor() {
     // 获取画布和上下文
     this.canvas = wx.createCanvas();
     this.ctx = this.canvas.getContext('2d');
-    
+
     // 获取屏幕尺寸
     const systemInfo = wx.getSystemInfoSync();
     this.width = systemInfo.windowWidth;
     this.height = systemInfo.windowHeight;
-    
+
     // 设置画布尺寸
     this.canvas.width = this.width;
     this.canvas.height = this.height;
-    
+
     // 游戏状态
     this.gameState = 'menu'; // menu, playing, paused, victory, gameover
-    
+
     // 游戏对象
     this.soundManager = new SoundManager();
     this.warrior = null;
@@ -32,19 +32,19 @@ class Game {
     this.items = [];
     this.bullets = [];
     this.hearts = [];
-    
+
     // 相机和关卡
     this.cameraX = 0;
     this.levelWidth = 12000;
-    
+
     // 计时器
     this.gameTimer = 0;
     this.timerStarted = false;
-    
+
     // 生命值
     this.health = 3;
     this.victoryTriggered = false;
-    
+
     // 输入状态
     this.input = {
       left: false,
@@ -52,65 +52,133 @@ class Game {
       jump: false,
       attack: false,
     };
-    
+
     // 触摸状态
     this.touches = {};
     this.touchButtons = [];
-    
+
     // 动画帧
     this.lastTime = 0;
     this.animationFrame = null;
-    
+
     // 初始化触摸控制
     this.initTouchControls();
-    
+
     // 开始游戏循环
     this.startGameLoop();
   }
-  
+
   // 初始化触摸控制
   initTouchControls() {
-    // 定义虚拟按钮区域
-    const btnSize = 60;
-    const padding = 20;
-    const bottomY = this.height - btnSize - padding;
-    
+    // 定义虚拟按钮区域（增大尺寸，上移位置）
+    const btnSize = 75; // 按钮尺寸从 60 增大到 75
+    const padding = 25;
+    const bottomOffset = 50; // 距离底部的额外偏移，使按钮上移
+    const bottomY = this.height - btnSize - padding - bottomOffset;
+
     this.touchButtons = [
-      { id: 'left', x: padding, y: bottomY, width: btnSize, height: btnSize, label: '←' },
-      { id: 'right', x: padding + btnSize + 15, y: bottomY, width: btnSize, height: btnSize, label: '→' },
-      { id: 'jump', x: this.width - padding - btnSize * 2 - 15, y: bottomY, width: btnSize, height: btnSize, label: 'B', color: 'rgba(76, 175, 80, 0.5)' },
-      { id: 'attack', x: this.width - padding - btnSize, y: bottomY, width: btnSize, height: btnSize, label: 'A', color: 'rgba(244, 67, 54, 0.5)' },
+      {id: 'left', x: padding, y: bottomY, width: btnSize, height: btnSize, label: '←'},
+      {id: 'right', x: padding + btnSize + 20, y: bottomY, width: btnSize, height: btnSize, label: '→'},
+      {
+        id: 'jump',
+        x: this.width - padding - btnSize * 2 - 20,
+        y: bottomY,
+        width: btnSize,
+        height: btnSize,
+        label: 'B',
+        color: 'rgba(76, 175, 80, 0.5)',
+      },
+      {
+        id: 'attack',
+        x: this.width - padding - btnSize,
+        y: bottomY,
+        width: btnSize,
+        height: btnSize,
+        label: 'A',
+        color: 'rgba(244, 67, 54, 0.5)',
+      },
     ];
-    
-    // 开始按钮（菜单界面）
-    this.startButton = {
-      x: this.width / 2 - 100,
-      y: this.height / 2 + 50,
-      width: 200,
-      height: 60,
+
+    // 菜单按钮（三个按钮横向排列，适配横屏）
+    const menuBtnWidth = Math.min(180, (this.width - 80) / 3);
+    const menuBtnHeight = Math.min(50, this.height / 5);
+    const menuBtnSpacing = 20;
+    const totalWidth = menuBtnWidth * 3 + menuBtnSpacing * 2;
+    const startX = (this.width - totalWidth) / 2;
+
+    this.menuButtons = {
+      start: {
+        x: startX,
+        y: this.height / 2 + 20,
+        width: menuBtnWidth,
+        height: menuBtnHeight,
+        label: '开始游戏',
+        color: 'rgba(255, 105, 180, 0.8)',
+      },
+      help: {
+        x: startX + menuBtnWidth + menuBtnSpacing,
+        y: this.height / 2 + 20,
+        width: menuBtnWidth,
+        height: menuBtnHeight,
+        label: '游戏说明',
+        color: 'rgba(64, 224, 208, 0.8)',
+      },
+      sound: {
+        x: startX + (menuBtnWidth + menuBtnSpacing) * 2,
+        y: this.height / 2 + 20,
+        width: menuBtnWidth,
+        height: menuBtnHeight,
+        label: '音效: 开',
+        color: 'rgba(80, 200, 120, 0.8)',
+      },
     };
-    
+
+    // 游戏说明弹窗状态
+    this.showHelp = false;
+
     // 触摸事件
     wx.onTouchStart((e) => this.handleTouchStart(e));
     wx.onTouchEnd((e) => this.handleTouchEnd(e));
     wx.onTouchMove((e) => this.handleTouchMove(e));
   }
-  
+
   handleTouchStart(e) {
     const touches = e.touches;
-    
+
     if (this.gameState === 'menu') {
-      // 检测开始按钮点击
       for (const touch of touches) {
-        if (this.isPointInRect(touch.clientX, touch.clientY, this.startButton)) {
+        // 如果显示帮助弹窗，点击任意位置关闭
+        if (this.showHelp) {
+          this.showHelp = false;
+          return;
+        }
+
+        // 检测开始游戏按钮
+        if (this.isPointInRect(touch.clientX, touch.clientY, this.menuButtons.start)) {
           this.startGame();
+          return;
+        }
+
+        // 检测游戏说明按钮
+        if (this.isPointInRect(touch.clientX, touch.clientY, this.menuButtons.help)) {
+          this.showHelp = true;
+          return;
+        }
+
+        // 检测音效按钮
+        if (this.isPointInRect(touch.clientX, touch.clientY, this.menuButtons.sound)) {
+          this.soundManager.enabled = !this.soundManager.enabled;
+          this.menuButtons.sound.label = this.soundManager.enabled ? '音效: 开' : '音效: 关';
+          this.menuButtons.sound.color = this.soundManager.enabled
+            ? 'rgba(80, 200, 120, 0.8)'
+            : 'rgba(150, 150, 150, 0.8)';
           return;
         }
       }
     } else if (this.gameState === 'playing') {
       for (const touch of touches) {
         const touchId = touch.identifier;
-        
+
         // 检测虚拟按钮
         for (const btn of this.touchButtons) {
           if (this.isPointInRect(touch.clientX, touch.clientY, btn)) {
@@ -119,89 +187,144 @@ class Game {
             break;
           }
         }
-        
-        // 检测暂停按钮
-        if (this.isPointInRect(touch.clientX, touch.clientY, { x: this.width - 55, y: 20, width: 35, height: 35 })) {
+
+        // 检测暂停按钮（位置下移避开小程序退出按钮）
+        if (this.isPointInRect(touch.clientX, touch.clientY, {x: this.width - 55, y: 70, width: 35, height: 35})) {
           this.pauseGame();
         }
       }
     } else if (this.gameState === 'paused') {
+      // 横屏适配的按钮位置计算
+      const centerY = this.height / 2;
+      const btnSpacing = Math.min(45, this.height / 6);
+      const btnWidth = 160;
+      const btnHeight = 40;
+      const btnX = this.width / 2 - btnWidth / 2;
+
       for (const touch of touches) {
         // 继续按钮
-        if (this.isPointInRect(touch.clientX, touch.clientY, { x: this.width / 2 - 100, y: this.height / 2 - 30, width: 200, height: 50 })) {
+        if (
+          this.isPointInRect(touch.clientX, touch.clientY, {
+            x: btnX,
+            y: centerY - btnSpacing * 0.3 - btnHeight / 2,
+            width: btnWidth,
+            height: btnHeight,
+          })
+        ) {
           this.resumeGame();
         }
         // 重新开始按钮
-        if (this.isPointInRect(touch.clientX, touch.clientY, { x: this.width / 2 - 100, y: this.height / 2 + 30, width: 200, height: 50 })) {
+        if (
+          this.isPointInRect(touch.clientX, touch.clientY, {
+            x: btnX,
+            y: centerY + btnSpacing * 0.7 - btnHeight / 2,
+            width: btnWidth,
+            height: btnHeight,
+          })
+        ) {
           this.restartGame();
         }
         // 返回菜单按钮
-        if (this.isPointInRect(touch.clientX, touch.clientY, { x: this.width / 2 - 100, y: this.height / 2 + 90, width: 200, height: 50 })) {
+        if (
+          this.isPointInRect(touch.clientX, touch.clientY, {
+            x: btnX,
+            y: centerY + btnSpacing * 1.7 - btnHeight / 2,
+            width: btnWidth,
+            height: btnHeight,
+          })
+        ) {
           this.backToMenu();
         }
       }
     } else if (this.gameState === 'victory' || this.gameState === 'gameover') {
+      // 横屏适配的按钮位置计算
+      const centerY = this.height / 2;
+      const btnSpacing = Math.min(45, this.height / 6);
+      const btnWidth = 160;
+      const btnHeight = 40;
+      const btnX = this.width / 2 - btnWidth / 2;
+
+      // 胜利界面的按钮位置
+      const btn1Y = this.gameState === 'victory' ? centerY + btnSpacing * 0.5 : centerY + btnSpacing * 0.3;
+      const btn2Y = this.gameState === 'victory' ? centerY + btnSpacing * 1.5 : centerY + btnSpacing * 1.3;
+
       for (const touch of touches) {
-        // 重新开始按钮
-        if (this.isPointInRect(touch.clientX, touch.clientY, { x: this.width / 2 - 100, y: this.height / 2 + 30, width: 200, height: 50 })) {
+        // 重新开始/再玩一次按钮
+        if (
+          this.isPointInRect(touch.clientX, touch.clientY, {
+            x: btnX,
+            y: btn1Y - btnHeight / 2,
+            width: btnWidth,
+            height: btnHeight,
+          })
+        ) {
           this.restartGame();
         }
         // 返回菜单按钮
-        if (this.isPointInRect(touch.clientX, touch.clientY, { x: this.width / 2 - 100, y: this.height / 2 + 90, width: 200, height: 50 })) {
+        if (
+          this.isPointInRect(touch.clientX, touch.clientY, {
+            x: btnX,
+            y: btn2Y - btnHeight / 2,
+            width: btnWidth,
+            height: btnHeight,
+          })
+        ) {
           this.backToMenu();
         }
       }
     }
   }
-  
+
   handleTouchEnd(e) {
     const changedTouches = e.changedTouches;
-    
+
     for (const touch of changedTouches) {
       const touchId = touch.identifier;
       const btnId = this.touches[touchId];
-      
+
       if (btnId) {
         this.input[btnId] = false;
         delete this.touches[touchId];
       }
     }
   }
-  
+
   handleTouchMove(e) {
     // 可以添加触摸移动逻辑
   }
-  
+
   isPointInRect(x, y, rect) {
     return x >= rect.x && x <= rect.x + rect.width && y >= rect.y && y <= rect.y + rect.height;
   }
-  
+
   // 开始游戏
   startGame() {
     this.initLevel();
     this.gameState = 'playing';
     this.soundManager.playBackgroundMusic('audio/bg.mp3');
   }
-  
+
   // 初始化关卡
   initLevel() {
-    this.warrior = new Warrior(100, 300, this.soundManager);
+    // 勇士初始位置：站在地面上（地面在 height - 50，勇士高度 60）
+    const warriorStartY = this.height - 50 - 60;
+    this.warrior = new Warrior(100, warriorStartY, this.soundManager);
     this.princess = new Princess(this.levelWidth - 300, this.height - 110);
-    
+
     this.createPlatforms();
     this.createEnemies();
     this.createTraps();
     this.createItems();
     this.bullets = [];
-    
+
     this.cameraX = 0;
     this.health = 3;
     this.victoryTriggered = false;
-    
+
     this.gameTimer = 0;
     this.timerStarted = true;
   }
-  
+
   createPlatforms() {
     this.platforms = [];
     const L = this.levelWidth;
@@ -271,7 +394,7 @@ class Game {
     this.platforms.push(new Platform(L - L * 0.0625, this.height - 150, 300, 20, 'platform'));
     this.platforms.push(new Platform(L - L * 0.0375, this.height - 100, 300, 20, 'platform'));
   }
-  
+
   createEnemies() {
     this.enemies = [];
     const L = this.levelWidth;
@@ -311,8 +434,12 @@ class Game {
     this.enemies.push(new Enemy(e2_3, this.height - 100, 'patrol', e2_3 - patrolRange, e2_3 + patrolRange));
     this.enemies.push(new Enemy(e2_4, this.height - 350, 'fly', e2_4 - patrolRange * 2.5, e2_4 + patrolRange * 2.5));
     this.enemies.push(new Enemy(e2_5, this.height - 320, 'fly', e2_5 - patrolRange * 2, e2_5 + patrolRange * 2));
-    this.enemies.push(new Enemy(e2_6, this.height - 100, 'shooter', e2_6 - patrolRange * 0.5, e2_6 + patrolRange * 0.5));
-    this.enemies.push(new Enemy(e2_7, this.height - 280, 'fly_shooter', e2_7 - patrolRange * 2, e2_7 + patrolRange * 2));
+    this.enemies.push(
+      new Enemy(e2_6, this.height - 100, 'shooter', e2_6 - patrolRange * 0.5, e2_6 + patrolRange * 0.5)
+    );
+    this.enemies.push(
+      new Enemy(e2_7, this.height - 280, 'fly_shooter', e2_7 - patrolRange * 2, e2_7 + patrolRange * 2)
+    );
 
     // 第三区域
     const e3_1 = area3Start + area3Width * 0.1;
@@ -325,8 +452,12 @@ class Game {
     this.enemies.push(new Enemy(e3_2, this.height - 100, 'patrol', e3_2 - patrolRange, e3_2 + patrolRange));
     this.enemies.push(new Enemy(e3_3, this.height - 400, 'fly', e3_3 - patrolRange * 2, e3_3 + patrolRange * 2));
     this.enemies.push(new Enemy(e3_4, this.height - 350, 'fly', e3_4 - patrolRange * 2, e3_4 + patrolRange * 2));
-    this.enemies.push(new Enemy(e3_5, this.height - 100, 'shooter', e3_5 - patrolRange * 0.5, e3_5 + patrolRange * 0.5));
-    this.enemies.push(new Enemy(e3_6, this.height - 320, 'fly_shooter', e3_6 - patrolRange * 2.5, e3_6 + patrolRange * 2.5));
+    this.enemies.push(
+      new Enemy(e3_5, this.height - 100, 'shooter', e3_5 - patrolRange * 0.5, e3_5 + patrolRange * 0.5)
+    );
+    this.enemies.push(
+      new Enemy(e3_6, this.height - 320, 'fly_shooter', e3_6 - patrolRange * 2.5, e3_6 + patrolRange * 2.5)
+    );
 
     // 第四区域
     const e4_1 = area4Start + area4Width * 0.1;
@@ -343,16 +474,24 @@ class Game {
     this.enemies.push(new Enemy(e4_3, this.height - 100, 'patrol', e4_3 - patrolRange, e4_3 + patrolRange));
     this.enemies.push(new Enemy(e4_4, this.height - 350, 'fly', e4_4 - patrolRange * 2.5, e4_4 + patrolRange * 2.5));
     this.enemies.push(new Enemy(e4_5, this.height - 380, 'fly', e4_5 - patrolRange * 2.5, e4_5 + patrolRange * 2.5));
-    this.enemies.push(new Enemy(e4_6, this.height - 100, 'shooter', e4_6 - patrolRange * 0.5, e4_6 + patrolRange * 0.5));
-    this.enemies.push(new Enemy(e4_7, this.height - 100, 'shooter', e4_7 - patrolRange * 0.5, e4_7 + patrolRange * 0.5));
-    this.enemies.push(new Enemy(e4_8, this.height - 300, 'fly_shooter', e4_8 - patrolRange * 2, e4_8 + patrolRange * 2));
-    this.enemies.push(new Enemy(e4_9, this.height - 350, 'fly_shooter', e4_9 - patrolRange * 2.5, e4_9 + patrolRange * 2.5));
+    this.enemies.push(
+      new Enemy(e4_6, this.height - 100, 'shooter', e4_6 - patrolRange * 0.5, e4_6 + patrolRange * 0.5)
+    );
+    this.enemies.push(
+      new Enemy(e4_7, this.height - 100, 'shooter', e4_7 - patrolRange * 0.5, e4_7 + patrolRange * 0.5)
+    );
+    this.enemies.push(
+      new Enemy(e4_8, this.height - 300, 'fly_shooter', e4_8 - patrolRange * 2, e4_8 + patrolRange * 2)
+    );
+    this.enemies.push(
+      new Enemy(e4_9, this.height - 350, 'fly_shooter', e4_9 - patrolRange * 2.5, e4_9 + patrolRange * 2.5)
+    );
 
     // 终点守卫
     const guardPos = L - L * 0.0875;
     this.enemies.push(new Enemy(guardPos, this.height - 100, 'patrol', guardPos - patrolRange, guardPos + patrolRange));
   }
-  
+
   createTraps() {
     this.traps = [];
     const L = this.levelWidth;
@@ -394,7 +533,7 @@ class Game {
     this.traps.push(new Trap(area4Start + area4Width * 0.65, this.height - 70, spikeWidth, 20, 'spike'));
     this.traps.push(new Trap(area4Start + area4Width * 0.8, this.height - 50, pitWidth, 100, 'pit'));
   }
-  
+
   createItems() {
     this.items = [];
     const L = this.levelWidth;
@@ -406,7 +545,7 @@ class Game {
     const swordX = area2Start + area2Width * 0.9;
     this.items.push(new Item(swordX, this.height - 130, 'sword'));
   }
-  
+
   // 检测道具拾取
   checkItemPickup() {
     this.items.forEach((item) => {
@@ -427,17 +566,17 @@ class Game {
       }
     });
   }
-  
+
   // 检测大宝剑是否击中敌人
   checkSwordHit(enemy) {
     const swordHitbox = this.warrior.getSwordHitbox();
     if (!swordHitbox) return false;
-    
+
     const hitX = swordHitbox.x < enemy.x + enemy.width && swordHitbox.x + swordHitbox.width > enemy.x;
     const hitY = swordHitbox.y < enemy.y + enemy.height && swordHitbox.y + swordHitbox.height > enemy.y;
     return hitX && hitY;
   }
-  
+
   // 检测子弹是否击中勇士
   checkBulletHit(bullet) {
     return (
@@ -447,7 +586,7 @@ class Game {
       bullet.y + bullet.height > this.warrior.y
     );
   }
-  
+
   // 更新游戏逻辑
   update(deltaTime) {
     if (this.gameState === 'playing') {
@@ -455,7 +594,7 @@ class Game {
       if (this.timerStarted && !this.victoryTriggered) {
         this.gameTimer += deltaTime;
       }
-      
+
       // 构建输入（胜利时禁止移动）
       const gameInput = {
         left: !this.victoryTriggered && this.input.left,
@@ -463,21 +602,21 @@ class Game {
         jump: this.input.jump,
         attack: this.input.attack,
       };
-      
+
       // 更新勇士
       this.warrior.update(deltaTime, gameInput, this.platforms, this.traps, this.levelWidth);
       this.health = this.warrior.health;
-      
+
       // 更新公主
       this.princess.updateAnimation(deltaTime);
-      
+
       // 更新道具
       this.items.forEach((item) => item.update(deltaTime));
       this.checkItemPickup();
-      
+
       // 更新敌人
       this.enemies.forEach((enemy) => enemy.update(deltaTime, this.warrior.x, this.warrior.y));
-      
+
       // 处理射击怪物发射子弹
       this.enemies.forEach((enemy) => {
         if ((enemy.type === 'shooter' || enemy.type === 'fly_shooter') && !enemy.defeated) {
@@ -487,11 +626,11 @@ class Game {
           }
         }
       });
-      
+
       // 更新子弹
       this.bullets.forEach((bullet) => bullet.update(deltaTime));
       this.bullets = this.bullets.filter((bullet) => bullet.active && !bullet.isOutOfBounds(this.cameraX, this.width));
-      
+
       // 子弹碰撞检测
       this.bullets.forEach((bullet) => {
         if (bullet.active && this.checkBulletHit(bullet)) {
@@ -502,7 +641,7 @@ class Game {
           }
         }
       });
-      
+
       // 敌人碰撞检测
       this.enemies.forEach((enemy) => {
         if (!enemy.defeated) {
@@ -512,7 +651,7 @@ class Game {
             this.soundManager.defeat();
             return;
           }
-          
+
           // 身体碰撞
           if (this.warrior.checkCollision(enemy)) {
             if (this.warrior.vy > 0 && this.warrior.y < enemy.y) {
@@ -529,15 +668,15 @@ class Game {
           }
         }
       });
-      
+
       // 更新相机
       this.updateCamera();
-      
+
       // 检测胜利和游戏结束
       this.checkVictory();
       this.checkGameOver();
     }
-    
+
     // 更新爱心粒子
     if (this.victoryTriggered) {
       this.hearts.forEach((heart) => {
@@ -547,12 +686,12 @@ class Game {
       });
     }
   }
-  
+
   updateCamera() {
     const targetX = this.warrior.x - this.width / 3;
     this.cameraX = Math.max(0, Math.min(targetX, this.levelWidth - this.width));
   }
-  
+
   checkVictory() {
     const collision =
       this.warrior.x < this.princess.x + this.princess.width &&
@@ -562,28 +701,28 @@ class Game {
 
     if (collision && !this.victoryTriggered) {
       this.victoryTriggered = true;
-      
+
       // 清除输入
       this.input.left = false;
       this.input.right = false;
       this.input.jump = false;
       this.input.attack = false;
-      
+
       this.createHeartParticles();
       this.soundManager.victory();
-      
+
       setTimeout(() => {
         this.gameState = 'victory';
       }, 1000);
     }
   }
-  
+
   checkGameOver() {
     if (this.warrior.health <= 0) {
       this.gameState = 'gameover';
     }
   }
-  
+
   createHeartParticles() {
     this.hearts = [];
     const princessScreenX = this.princess.x - this.cameraX;
@@ -601,7 +740,7 @@ class Game {
       });
     }
   }
-  
+
   // 暂停游戏
   pauseGame() {
     if (this.gameState === 'playing') {
@@ -609,7 +748,7 @@ class Game {
       this.soundManager.pauseBackgroundMusic();
     }
   }
-  
+
   // 恢复游戏
   resumeGame() {
     if (this.gameState === 'paused') {
@@ -617,7 +756,7 @@ class Game {
       this.soundManager.resumeBackgroundMusic();
     }
   }
-  
+
   // 重新开始
   restartGame() {
     this.soundManager.stopBackgroundMusic();
@@ -625,25 +764,25 @@ class Game {
     this.initLevel();
     this.soundManager.playBackgroundMusic('audio/bg.mp3');
   }
-  
+
   // 返回菜单
   backToMenu() {
     this.soundManager.stopBackgroundMusic();
     this.gameState = 'menu';
   }
-  
+
   // 渲染游戏
   render() {
     // 清屏
     this.ctx.fillStyle = '#87CEEB';
     this.ctx.fillRect(0, 0, this.width, this.height);
-    
+
     if (this.gameState === 'menu') {
       this.renderMenu();
     } else {
       this.renderGame();
       this.renderUI();
-      
+
       if (this.gameState === 'paused') {
         this.renderPauseMenu();
       } else if (this.gameState === 'victory') {
@@ -653,78 +792,214 @@ class Game {
       }
     }
   }
-  
+
   renderMenu() {
-    // 背景
-    this.ctx.fillStyle = '#87CEEB';
+    // 背景 - 渐变紫色（与原版一致）
+    const gradient = this.ctx.createLinearGradient(0, 0, this.width, this.height);
+    gradient.addColorStop(0, '#667eea');
+    gradient.addColorStop(1, '#764ba2');
+    this.ctx.fillStyle = gradient;
     this.ctx.fillRect(0, 0, this.width, this.height);
-    
-    // 标题
-    this.ctx.fillStyle = '#FFD700';
-    this.ctx.font = 'bold 48px Arial';
+
+    // 更新菜单按钮位置（横屏适配）
+    const menuBtnWidth = Math.min(180, (this.width - 80) / 3);
+    const menuBtnHeight = Math.min(50, this.height / 5);
+    const menuBtnSpacing = 15;
+    const totalWidth = menuBtnWidth * 3 + menuBtnSpacing * 2;
+    const startX = (this.width - totalWidth) / 2;
+    const btnY = this.height / 2 + 20;
+
+    this.menuButtons.start.x = startX;
+    this.menuButtons.start.y = btnY;
+    this.menuButtons.start.width = menuBtnWidth;
+    this.menuButtons.start.height = menuBtnHeight;
+
+    this.menuButtons.help.x = startX + menuBtnWidth + menuBtnSpacing;
+    this.menuButtons.help.y = btnY;
+    this.menuButtons.help.width = menuBtnWidth;
+    this.menuButtons.help.height = menuBtnHeight;
+
+    this.menuButtons.sound.x = startX + (menuBtnWidth + menuBtnSpacing) * 2;
+    this.menuButtons.sound.y = btnY;
+    this.menuButtons.sound.width = menuBtnWidth;
+    this.menuButtons.sound.height = menuBtnHeight;
+
+    // 标题 - 根据屏幕调整
+    const titleSize = Math.min(48, this.height / 5, this.width / 10);
+    this.ctx.fillStyle = '#FFFFFF';
+    this.ctx.font = `bold ${titleSize}px Arial`;
     this.ctx.textAlign = 'center';
-    this.ctx.fillText('勇士救公主', this.width / 2, this.height / 2 - 50);
-    
+    this.ctx.shadowColor = 'rgba(0, 0, 0, 0.3)';
+    this.ctx.shadowBlur = 4;
+    this.ctx.fillText('钱程似金', this.width / 2, this.height / 2 - menuBtnHeight);
+
     // 副标题
+    const subTitleSize = Math.min(20, this.height / 10);
+    this.ctx.fillStyle = 'rgba(255, 255, 255, 0.8)';
+    this.ctx.font = `${subTitleSize}px Arial`;
+    this.ctx.fillText('JinShuo Loves ChengYan', this.width / 2, this.height / 2 - menuBtnHeight / 3);
+    this.ctx.shadowBlur = 0;
+
+    // 绘制三个菜单按钮
+    const btnRadius = Math.min(25, menuBtnHeight / 2);
+    const fontSize = Math.min(18, menuBtnHeight / 2.5);
+
+    // 开始游戏按钮（粉色渐变）
+    this.drawGradientButton(this.menuButtons.start, '#f093fb', '#f5576c', btnRadius);
     this.ctx.fillStyle = '#FFFFFF';
-    this.ctx.font = '24px Arial';
-    this.ctx.fillText('钱程似锦', this.width / 2, this.height / 2);
-    
-    // 开始按钮
-    this.ctx.fillStyle = 'rgba(255, 105, 180, 0.8)';
-    this.roundRect(this.startButton.x, this.startButton.y, this.startButton.width, this.startButton.height, 30);
-    this.ctx.fill();
-    
+    this.ctx.font = `bold ${fontSize}px Arial`;
+    this.ctx.fillText(
+      this.menuButtons.start.label,
+      this.menuButtons.start.x + this.menuButtons.start.width / 2,
+      this.menuButtons.start.y + this.menuButtons.start.height / 2 + fontSize / 3
+    );
+
+    // 游戏说明按钮（蓝色渐变）
+    this.drawGradientButton(this.menuButtons.help, '#4facfe', '#00f2fe', btnRadius);
     this.ctx.fillStyle = '#FFFFFF';
-    this.ctx.font = 'bold 24px Arial';
-    this.ctx.fillText('开始游戏', this.width / 2, this.startButton.y + 38);
+    this.ctx.font = `bold ${fontSize}px Arial`;
+    this.ctx.fillText(
+      this.menuButtons.help.label,
+      this.menuButtons.help.x + this.menuButtons.help.width / 2,
+      this.menuButtons.help.y + this.menuButtons.help.height / 2 + fontSize / 3
+    );
+
+    // 音效按钮（绿色渐变）
+    const soundColor1 = this.soundManager.enabled ? '#43e97b' : '#8e9eab';
+    const soundColor2 = this.soundManager.enabled ? '#38f9d7' : '#a8b5c0';
+    this.drawGradientButton(this.menuButtons.sound, soundColor1, soundColor2, btnRadius);
+    this.ctx.fillStyle = '#FFFFFF';
+    this.ctx.font = `bold ${fontSize}px Arial`;
+    const soundLabel = this.soundManager.enabled ? '音效: 开' : '音效: 关';
+    this.ctx.fillText(
+      soundLabel,
+      this.menuButtons.sound.x + this.menuButtons.sound.width / 2,
+      this.menuButtons.sound.y + this.menuButtons.sound.height / 2 + fontSize / 3
+    );
+
+    this.ctx.textAlign = 'left';
+
+    // 显示帮助弹窗
+    if (this.showHelp) {
+      this.renderHelpPopup();
+    }
   }
-  
+
+  // 绘制渐变按钮
+  drawGradientButton(btn, color1, color2, radius) {
+    const gradient = this.ctx.createLinearGradient(btn.x, btn.y, btn.x + btn.width, btn.y + btn.height);
+    gradient.addColorStop(0, color1);
+    gradient.addColorStop(1, color2);
+    this.ctx.fillStyle = gradient;
+    this.roundRect(btn.x, btn.y, btn.width, btn.height, radius);
+    this.ctx.fill();
+
+    // 添加阴影效果
+    this.ctx.shadowColor = 'rgba(0, 0, 0, 0.2)';
+    this.ctx.shadowBlur = 10;
+    this.ctx.shadowOffsetY = 5;
+    this.roundRect(btn.x, btn.y, btn.width, btn.height, radius);
+    this.ctx.fill();
+    this.ctx.shadowColor = 'transparent';
+    this.ctx.shadowBlur = 0;
+    this.ctx.shadowOffsetY = 0;
+  }
+
+  // 渲染帮助弹窗
+  renderHelpPopup() {
+    // 半透明背景
+    this.ctx.fillStyle = 'rgba(0, 0, 0, 0.7)';
+    this.ctx.fillRect(0, 0, this.width, this.height);
+
+    // 弹窗
+    const popupWidth = Math.min(400, this.width - 40);
+    const popupHeight = Math.min(250, this.height - 40);
+    const popupX = (this.width - popupWidth) / 2;
+    const popupY = (this.height - popupHeight) / 2;
+
+    this.ctx.fillStyle = 'rgba(255, 255, 255, 0.95)';
+    this.roundRect(popupX, popupY, popupWidth, popupHeight, 15);
+    this.ctx.fill();
+
+    // 标题
+    this.ctx.fillStyle = '#333';
+    const titleSize = Math.min(24, popupHeight / 8);
+    this.ctx.font = `bold ${titleSize}px Arial`;
+    this.ctx.textAlign = 'center';
+    this.ctx.fillText('游戏说明', this.width / 2, popupY + 35);
+
+    // 内容
+    const contentSize = Math.min(16, popupHeight / 12);
+    this.ctx.font = `${contentSize}px Arial`;
+    this.ctx.fillStyle = '#555';
+
+    const lines = [
+      '← → : 左右移动',
+      'B 键 : 跳跃',
+      'A 键 : 攻击',
+      '',
+      '目标：穿越关卡，救出公主！',
+      '提示：拾取大宝剑可以增强攻击',
+    ];
+
+    const lineHeight = Math.min(28, popupHeight / 8);
+    lines.forEach((line, i) => {
+      this.ctx.fillText(line, this.width / 2, popupY + 70 + i * lineHeight);
+    });
+
+    // 关闭提示
+    this.ctx.fillStyle = '#999';
+    this.ctx.font = `${Math.min(14, contentSize)}px Arial`;
+    this.ctx.fillText('点击任意位置关闭', this.width / 2, popupY + popupHeight - 20);
+
+    this.ctx.textAlign = 'left';
+  }
+
   renderGame() {
     this.ctx.save();
     this.ctx.translate(-this.cameraX, 0);
-    
+
     // 绘制云朵
     this.drawClouds();
-    
+
     // 绘制平台
     this.platforms.forEach((platform) => platform.draw(this.ctx));
-    
+
     // 绘制陷阱
     this.traps.forEach((trap) => trap.draw(this.ctx));
-    
+
     // 绘制道具
     this.items.forEach((item) => item.draw(this.ctx));
-    
+
     // 绘制敌人
     this.enemies.forEach((enemy) => enemy.draw(this.ctx));
-    
+
     // 绘制子弹
     this.bullets.forEach((bullet) => bullet.draw(this.ctx));
-    
+
     // 绘制公主
     this.princess.draw(this.ctx);
-    
+
     // 绘制勇士
     this.warrior.draw(this.ctx);
-    
+
     this.ctx.restore();
-    
+
     // 绘制爱心粒子
     if (this.victoryTriggered) {
       this.renderHeartParticles();
     }
   }
-  
+
   drawClouds() {
     this.ctx.fillStyle = 'rgba(255, 255, 255, 0.7)';
     const clouds = [
-      { x: 200, y: 100, w: 100, h: 50 },
-      { x: 600, y: 150, w: 120, h: 60 },
-      { x: 1200, y: 80, w: 90, h: 45 },
-      { x: 1800, y: 120, w: 110, h: 55 },
-      { x: 2500, y: 90, w: 100, h: 50 },
-      { x: 3200, y: 140, w: 95, h: 48 },
+      {x: 200, y: 100, w: 100, h: 50},
+      {x: 600, y: 150, w: 120, h: 60},
+      {x: 1200, y: 80, w: 90, h: 45},
+      {x: 1800, y: 120, w: 110, h: 55},
+      {x: 2500, y: 90, w: 100, h: 50},
+      {x: 3200, y: 140, w: 95, h: 48},
     ];
 
     clouds.forEach((cloud) => {
@@ -736,7 +1011,7 @@ class Game {
       this.ctx.fill();
     });
   }
-  
+
   renderUI() {
     // 生命值
     for (let i = 0; i < 3; i++) {
@@ -744,52 +1019,52 @@ class Game {
       this.ctx.font = '30px Arial';
       this.ctx.fillText('❤', 20 + i * 40, 45);
     }
-    
+
     // 计时器
     const seconds = Math.floor(this.gameTimer / 1000);
-    const milliseconds = Math.floor((this.gameTimer % 1000));
+    const milliseconds = Math.floor(this.gameTimer % 1000);
     const timeText = `${seconds}.${milliseconds.toString().padStart(3, '0')}`;
-    
+
     this.ctx.fillStyle = 'rgba(0, 0, 0, 0.6)';
     this.roundRect(this.width / 2 - 60, 15, 120, 40, 15);
     this.ctx.fill();
-    
+
     this.ctx.fillStyle = '#FFD700';
     this.ctx.font = 'bold 24px Courier New';
     this.ctx.textAlign = 'center';
     this.ctx.fillText(timeText, this.width / 2, 45);
     this.ctx.textAlign = 'left';
-    
-    // 暂停按钮
+
+    // 暂停按钮（位置下移避开小程序退出按钮）
     this.ctx.fillStyle = 'rgba(0, 0, 0, 0.5)';
-    this.roundRect(this.width - 55, 20, 35, 35, 10);
+    this.roundRect(this.width - 55, 70, 35, 35, 10);
     this.ctx.fill();
-    
+
     this.ctx.fillStyle = '#FFFFFF';
     this.ctx.font = '24px Arial';
     this.ctx.textAlign = 'center';
-    this.ctx.fillText('⏸', this.width - 37, 47);
+    this.ctx.fillText('⏸', this.width - 37, 97);
     this.ctx.textAlign = 'left';
-    
-    // 虚拟按钮
+
+    // 虚拟按钮（增大尺寸和字体）
     this.touchButtons.forEach((btn) => {
       this.ctx.fillStyle = btn.color || 'rgba(255, 255, 255, 0.3)';
-      this.ctx.strokeStyle = 'rgba(255, 255, 255, 0.5)';
-      this.ctx.lineWidth = 2;
-      
+      this.ctx.strokeStyle = 'rgba(255, 255, 255, 0.6)';
+      this.ctx.lineWidth = 3;
+
       this.ctx.beginPath();
       this.ctx.arc(btn.x + btn.width / 2, btn.y + btn.height / 2, btn.width / 2, 0, Math.PI * 2);
       this.ctx.fill();
       this.ctx.stroke();
-      
+
       this.ctx.fillStyle = '#FFFFFF';
-      this.ctx.font = 'bold 20px Arial';
+      this.ctx.font = 'bold 26px Arial'; // 字体从 20px 增大到 26px
       this.ctx.textAlign = 'center';
-      this.ctx.fillText(btn.label, btn.x + btn.width / 2, btn.y + btn.height / 2 + 7);
+      this.ctx.fillText(btn.label, btn.x + btn.width / 2, btn.y + btn.height / 2 + 9);
       this.ctx.textAlign = 'left';
     });
   }
-  
+
   renderHeartParticles() {
     this.ctx.fillStyle = '#ff69b4';
     this.ctx.font = 'bold 30px Arial';
@@ -801,70 +1076,85 @@ class Game {
       this.ctx.restore();
     });
   }
-  
+
   renderPauseMenu() {
     // 半透明背景
     this.ctx.fillStyle = 'rgba(0, 0, 0, 0.8)';
     this.ctx.fillRect(0, 0, this.width, this.height);
-    
+
+    // 横屏适配：计算合适的间距
+    const centerY = this.height / 2;
+    const btnSpacing = Math.min(45, this.height / 6);
+
     // 标题
     this.ctx.fillStyle = '#FFFFFF';
-    this.ctx.font = 'bold 36px Arial';
+    this.ctx.font = `bold ${Math.min(28, this.height / 8)}px Arial`;
     this.ctx.textAlign = 'center';
-    this.ctx.fillText('游戏暂停', this.width / 2, this.height / 2 - 80);
-    
+    this.ctx.fillText('游戏暂停', this.width / 2, centerY - btnSpacing * 1.5);
+
     // 按钮
-    this.renderMenuButton('继续游戏', this.height / 2 - 30);
-    this.renderMenuButton('重新开始', this.height / 2 + 30);
-    this.renderMenuButton('返回菜单', this.height / 2 + 90);
-    
+    this.renderMenuButton('继续游戏', centerY - btnSpacing * 0.3);
+    this.renderMenuButton('重新开始', centerY + btnSpacing * 0.7);
+    this.renderMenuButton('返回菜单', centerY + btnSpacing * 1.7);
+
     this.ctx.textAlign = 'left';
   }
-  
+
   renderVictoryScreen() {
     this.ctx.fillStyle = 'rgba(0, 0, 0, 0.8)';
     this.ctx.fillRect(0, 0, this.width, this.height);
-    
+
+    // 横屏适配
+    const centerY = this.height / 2;
+    const btnSpacing = Math.min(45, this.height / 6);
+
     this.ctx.fillStyle = '#FFD700';
-    this.ctx.font = 'bold 36px Arial';
+    this.ctx.font = `bold ${Math.min(28, this.height / 8)}px Arial`;
     this.ctx.textAlign = 'center';
-    this.ctx.fillText('🎉 恭喜通关!', this.width / 2, this.height / 2 - 80);
-    
+    this.ctx.fillText('🎉 恭喜通关!', this.width / 2, centerY - btnSpacing * 1.5);
+
     this.ctx.fillStyle = '#FFFFFF';
-    this.ctx.font = '24px Arial';
-    this.ctx.fillText('喜结良缘，钱程似锦！', this.width / 2, this.height / 2 - 30);
-    
-    this.renderMenuButton('再玩一次', this.height / 2 + 30);
-    this.renderMenuButton('返回菜单', this.height / 2 + 90);
-    
+    this.ctx.font = `${Math.min(18, this.height / 12)}px Arial`;
+    this.ctx.fillText('喜结良缘，钱程似锦！', this.width / 2, centerY - btnSpacing * 0.5);
+
+    this.renderMenuButton('再玩一次', centerY + btnSpacing * 0.5);
+    this.renderMenuButton('返回菜单', centerY + btnSpacing * 1.5);
+
     this.ctx.textAlign = 'left';
   }
-  
+
   renderGameOverScreen() {
     this.ctx.fillStyle = 'rgba(0, 0, 0, 0.8)';
     this.ctx.fillRect(0, 0, this.width, this.height);
-    
+
+    // 横屏适配
+    const centerY = this.height / 2;
+    const btnSpacing = Math.min(45, this.height / 6);
+
     this.ctx.fillStyle = '#FF6B6B';
-    this.ctx.font = 'bold 32px Arial';
+    this.ctx.font = `bold ${Math.min(24, this.height / 10)}px Arial`;
     this.ctx.textAlign = 'center';
-    this.ctx.fillText('燕子，没有你我怎么活啊~', this.width / 2, this.height / 2 - 50);
-    
-    this.renderMenuButton('重新开始', this.height / 2 + 30);
-    this.renderMenuButton('返回菜单', this.height / 2 + 90);
-    
+    this.ctx.fillText('燕子，没有你我怎么活啊~', this.width / 2, centerY - btnSpacing);
+
+    this.renderMenuButton('重新开始', centerY + btnSpacing * 0.3);
+    this.renderMenuButton('返回菜单', centerY + btnSpacing * 1.3);
+
     this.ctx.textAlign = 'left';
   }
-  
+
   renderMenuButton(text, y) {
+    const btnWidth = 160;
+    const btnHeight = 40;
+
     this.ctx.fillStyle = 'rgba(255, 105, 180, 0.8)';
-    this.roundRect(this.width / 2 - 100, y - 25, 200, 50, 25);
+    this.roundRect(this.width / 2 - btnWidth / 2, y - btnHeight / 2, btnWidth, btnHeight, 20);
     this.ctx.fill();
-    
+
     this.ctx.fillStyle = '#FFFFFF';
-    this.ctx.font = 'bold 18px Arial';
-    this.ctx.fillText(text, this.width / 2, y + 6);
+    this.ctx.font = `bold ${Math.min(16, this.height / 15)}px Arial`;
+    this.ctx.fillText(text, this.width / 2, y + 5);
   }
-  
+
   // 绘制圆角矩形
   roundRect(x, y, width, height, radius) {
     this.ctx.beginPath();
@@ -879,26 +1169,25 @@ class Game {
     this.ctx.quadraticCurveTo(x, y, x + radius, y);
     this.ctx.closePath();
   }
-  
+
   // 游戏循环
   startGameLoop() {
     const loop = (timestamp) => {
       const deltaTime = timestamp - this.lastTime;
       this.lastTime = timestamp;
-      
+
       if (this.gameState !== 'paused') {
         this.update(deltaTime);
       }
-      
+
       this.render();
-      
+
       this.animationFrame = requestAnimationFrame(loop);
     };
-    
+
     this.animationFrame = requestAnimationFrame(loop);
   }
 }
 
 // 导出游戏实例
 export default Game;
-
