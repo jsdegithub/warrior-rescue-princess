@@ -492,11 +492,19 @@ export default {
 
         this.enemies.forEach((enemy) => {
           if (this.warrior.checkCollision(enemy) && !enemy.defeated) {
+            // 方式1：跳跃踩踏击杀
             if (this.warrior.vy > 0 && this.warrior.y < enemy.y) {
               enemy.defeat();
               this.warrior.vy = -8;
               this.soundManager.defeat();
-            } else if (!this.warrior.isInvulnerable) {
+            }
+            // 方式2：攻击击杀（检测攻击状态和攻击范围）
+            else if (this.warrior.isAttacking && this.checkAttackHit(enemy)) {
+              enemy.defeat();
+              this.soundManager.defeat();
+            }
+            // 否则玩家受伤
+            else if (!this.warrior.isInvulnerable && !this.warrior.isAttacking) {
               this.warrior.takeDamage();
               this.health = this.warrior.health;
             }
@@ -516,6 +524,30 @@ export default {
           heart.rotation += heart.rotationSpeed;
         });
       }
+    },
+
+    // 检测攻击是否击中敌人（基于勇士面朝方向的攻击范围）
+    checkAttackHit(enemy) {
+      const attackRange = 60; // 攻击范围（像素）
+      const warrior = this.warrior;
+
+      // 根据勇士面朝方向确定攻击区域
+      let attackX, attackWidth;
+      if (warrior.direction === 1) {
+        // 面向右：攻击区域在勇士右侧
+        attackX = warrior.x + warrior.width;
+        attackWidth = attackRange;
+      } else {
+        // 面向左：攻击区域在勇士左侧
+        attackX = warrior.x - attackRange;
+        attackWidth = attackRange;
+      }
+
+      // 检测攻击区域与敌人是否重叠
+      const hitX = attackX < enemy.x + enemy.width && attackX + attackWidth > enemy.x;
+      const hitY = warrior.y < enemy.y + enemy.height && warrior.y + warrior.height > enemy.y;
+
+      return hitX && hitY;
     },
 
     updateCamera() {
