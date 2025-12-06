@@ -35,6 +35,52 @@ export class Warrior {
     // 装备系统
     this.hasSword = false;
     this.swordSwingAngle = 0;
+
+    // 精灵图
+    this.sprites = {
+      idle: null,
+      jump: null,
+      walk: [],
+      attack: [],
+    };
+    this.spritesLoaded = false;
+    this.loadSprites();
+  }
+
+  // 加载精灵图
+  loadSprites() {
+    const basePath = 'images/MaleAdventurer/';
+
+    // 加载待机精灵
+    this.sprites.idle = wx.createImage();
+    this.sprites.idle.src = basePath + 'character_maleAdventurer_idle.png';
+
+    // 加载跳跃精灵
+    this.sprites.jump = wx.createImage();
+    this.sprites.jump.src = basePath + 'character_maleAdventurer_jump.png';
+
+    // 加载行走精灵
+    for (let i = 0; i < 4; i++) {
+      const img = wx.createImage();
+      img.src = basePath + `character_maleAdventurer_walk${i}.png`;
+      this.sprites.walk.push(img);
+    }
+
+    // 加载攻击精灵
+    for (let i = 0; i < 3; i++) {
+      const img = wx.createImage();
+      img.src = basePath + `character_maleAdventurer_attack${i}.png`;
+      this.sprites.attack.push(img);
+    }
+
+    // 检查加载完成
+    this.sprites.idle.onload = () => this.checkSpritesLoaded();
+  }
+
+  checkSpritesLoaded() {
+    if (this.sprites.idle.complete) {
+      this.spritesLoaded = true;
+    }
   }
 
   equipSword() {
@@ -166,7 +212,14 @@ export class Warrior {
         const warriorBottom = this.y + this.height;
         const distanceToTrap = trap.y - warriorBottom;
 
-        if (overlapRatio > 0.7 && !this.onGround && this.vy > 0 && !this.isFalling && distanceToTrap < 60 && distanceToTrap > -20) {
+        if (
+          overlapRatio > 0.7 &&
+          !this.onGround &&
+          this.vy > 0 &&
+          !this.isFalling &&
+          distanceToTrap < 60 &&
+          distanceToTrap > -20
+        ) {
           this.isFalling = true;
           this.fallStartY = this.y;
           this.vx = 0;
@@ -245,38 +298,96 @@ export class Warrior {
       ctx.globalAlpha = 0.5;
     }
 
-    // 绘制勇士身体
-    ctx.fillStyle = '#4169E1';
-    
+    // 选择当前精灵图
+    let currentSprite = this.sprites.idle;
+    if (this.isAttacking) {
+      const attackFrameIndex = Math.min(2, Math.floor((300 - this.attackTime) / 100));
+      currentSprite = this.sprites.attack[attackFrameIndex] || this.sprites.idle;
+    } else if (!this.onGround) {
+      currentSprite = this.sprites.jump || this.sprites.idle;
+    } else if (this.vx !== 0) {
+      const walkIndex = Math.floor(this.walkFrame / 2) % 4;
+      currentSprite = this.sprites.walk[walkIndex] || this.sprites.idle;
+    }
+
+    // 方向翻转
     if (this.direction === -1) {
       ctx.translate(this.x + this.width, 0);
       ctx.scale(-1, 1);
       ctx.translate(-this.x, 0);
     }
 
-    ctx.fillRect(this.x, this.y + 20, this.width, this.height - 20);
+    // 尝试绘制精灵图
+    let spriteDrawn = false;
+    if (currentSprite && currentSprite.complete && currentSprite.width > 0) {
+      try {
+        ctx.drawImage(currentSprite, this.x, this.y, this.width, this.height);
+        spriteDrawn = true;
+      } catch (e) {
+        spriteDrawn = false;
+      }
+    }
 
-    // 绘制头部
-    const headCenterX = this.x + this.width / 2;
-    const headCenterY = this.y + 12;
-    const headRadius = 12;
+    // 如果精灵图绘制失败，使用简单图形
+    if (!spriteDrawn) {
+      // 身体
+      ctx.fillStyle = '#4169E1';
+      ctx.fillRect(this.x + 8, this.y + 20, this.width - 16, this.height - 25);
 
-    ctx.fillStyle = '#FFE4B5';
-    ctx.beginPath();
-    ctx.arc(headCenterX, headCenterY, headRadius, 0, Math.PI * 2);
-    ctx.fill();
+      // 头部
+      const headCenterX = this.x + this.width / 2;
+      const headCenterY = this.y + 14;
+      const headRadius = 12;
 
-    // 头部边框
-    ctx.strokeStyle = '#FFD700';
-    ctx.lineWidth = 2;
-    ctx.stroke();
+      ctx.fillStyle = '#FFE4B5';
+      ctx.beginPath();
+      ctx.arc(headCenterX, headCenterY, headRadius, 0, Math.PI * 2);
+      ctx.fill();
 
-    // 眼睛
-    ctx.fillStyle = '#000';
-    ctx.beginPath();
-    ctx.arc(headCenterX - 4, headCenterY - 2, 2, 0, Math.PI * 2);
-    ctx.arc(headCenterX + 4, headCenterY - 2, 2, 0, Math.PI * 2);
-    ctx.fill();
+      // 头发
+      ctx.fillStyle = '#8B4513';
+      ctx.beginPath();
+      ctx.arc(headCenterX, headCenterY - 4, headRadius, Math.PI, 2 * Math.PI);
+      ctx.fill();
+
+      // 眼睛
+      ctx.fillStyle = '#000';
+      ctx.beginPath();
+      ctx.arc(headCenterX - 4, headCenterY - 1, 2, 0, Math.PI * 2);
+      ctx.arc(headCenterX + 4, headCenterY - 1, 2, 0, Math.PI * 2);
+      ctx.fill();
+
+      // 嘴巴
+      ctx.strokeStyle = '#000';
+      ctx.lineWidth = 1;
+      ctx.beginPath();
+      ctx.arc(headCenterX, headCenterY + 4, 3, 0, Math.PI);
+      ctx.stroke();
+
+      // 手臂
+      ctx.strokeStyle = '#FFE4B5';
+      ctx.lineWidth = 4;
+      ctx.beginPath();
+      ctx.moveTo(this.x + 8, this.y + 28);
+      ctx.lineTo(this.x + 2, this.y + 42);
+      ctx.stroke();
+      ctx.beginPath();
+      ctx.moveTo(this.x + this.width - 8, this.y + 28);
+      ctx.lineTo(this.x + this.width - 2, this.y + 42);
+      ctx.stroke();
+
+      // 腿
+      ctx.strokeStyle = '#4169E1';
+      ctx.lineWidth = 5;
+      ctx.beginPath();
+      ctx.moveTo(this.x + 15, this.y + this.height - 5);
+      ctx.lineTo(this.x + 12, this.y + this.height + 5);
+      ctx.stroke();
+      ctx.beginPath();
+      ctx.moveTo(this.x + this.width - 15, this.y + this.height - 5);
+      ctx.lineTo(this.x + this.width - 12, this.y + this.height + 5);
+      ctx.stroke();
+    }
 
     ctx.restore();
 
@@ -373,6 +484,34 @@ export class Princess {
     this.walkFrame = 0;
     this.walkTime = 0;
     this.direction = 1;
+
+    // 精灵图
+    this.sprites = {
+      idle: null,
+      walk: [],
+    };
+    this.spritesLoaded = false;
+    this.loadSprites();
+  }
+
+  // 加载精灵图
+  loadSprites() {
+    const basePath = 'images/FemaleAdventurer/';
+
+    // 加载待机精灵
+    this.sprites.idle = wx.createImage();
+    this.sprites.idle.src = basePath + 'character_femaleAdventurer_idle.png';
+
+    // 加载行走精灵
+    for (let i = 0; i < 4; i++) {
+      const img = wx.createImage();
+      img.src = basePath + `character_femaleAdventurer_walk${i}.png`;
+      this.sprites.walk.push(img);
+    }
+
+    this.sprites.idle.onload = () => {
+      this.spritesLoaded = true;
+    };
   }
 
   updateAnimation(deltaTime) {
@@ -386,60 +525,107 @@ export class Princess {
   draw(ctx) {
     ctx.save();
 
-    // 绘制公主身体
-    ctx.fillStyle = '#FF69B4';
-    ctx.fillRect(this.x, this.y + 20, this.width, this.height - 20);
+    // 选择当前精灵图（简单的待机/行走动画）
+    const walkIndex = Math.floor(this.walkFrame / 2) % 4;
+    let currentSprite = this.sprites.walk[walkIndex] || this.sprites.idle;
 
-    // 绘制裙子
-    ctx.beginPath();
-    ctx.moveTo(this.x, this.y + 40);
-    ctx.lineTo(this.x - 5, this.y + this.height);
-    ctx.lineTo(this.x + this.width + 5, this.y + this.height);
-    ctx.lineTo(this.x + this.width, this.y + 40);
-    ctx.closePath();
-    ctx.fill();
+    // 尝试绘制精灵图
+    let spriteDrawn = false;
+    if (currentSprite && currentSprite.complete && currentSprite.width > 0) {
+      try {
+        ctx.drawImage(currentSprite, this.x, this.y, this.width, this.height);
+        spriteDrawn = true;
+      } catch (e) {
+        spriteDrawn = false;
+      }
+    }
 
-    // 绘制头部
-    const headCenterX = this.x + this.width / 2;
-    const headCenterY = this.y + 12;
-    const headRadius = 12;
+    // 如果精灵图绘制失败，使用简单图形
+    if (!spriteDrawn) {
+      // 绘制公主身体（裙子）
+      ctx.fillStyle = '#FF69B4';
 
-    ctx.fillStyle = '#FFE4B5';
-    ctx.beginPath();
-    ctx.arc(headCenterX, headCenterY, headRadius, 0, Math.PI * 2);
-    ctx.fill();
+      // 上半身
+      ctx.fillRect(this.x + 10, this.y + 20, this.width - 20, 20);
 
-    // 头部边框（皇冠色）
-    ctx.strokeStyle = '#FFD700';
-    ctx.lineWidth = 2;
-    ctx.stroke();
+      // 裙子（梯形）
+      ctx.beginPath();
+      ctx.moveTo(this.x + 5, this.y + 40);
+      ctx.lineTo(this.x - 2, this.y + this.height);
+      ctx.lineTo(this.x + this.width + 2, this.y + this.height);
+      ctx.lineTo(this.x + this.width - 5, this.y + 40);
+      ctx.closePath();
+      ctx.fill();
 
-    // 皇冠
-    ctx.fillStyle = '#FFD700';
-    ctx.beginPath();
-    ctx.moveTo(headCenterX - 8, headCenterY - 10);
-    ctx.lineTo(headCenterX - 6, headCenterY - 18);
-    ctx.lineTo(headCenterX - 3, headCenterY - 12);
-    ctx.lineTo(headCenterX, headCenterY - 20);
-    ctx.lineTo(headCenterX + 3, headCenterY - 12);
-    ctx.lineTo(headCenterX + 6, headCenterY - 18);
-    ctx.lineTo(headCenterX + 8, headCenterY - 10);
-    ctx.closePath();
-    ctx.fill();
+      // 绘制头部
+      const headCenterX = this.x + this.width / 2;
+      const headCenterY = this.y + 14;
+      const headRadius = 12;
 
-    // 眼睛
-    ctx.fillStyle = '#000';
-    ctx.beginPath();
-    ctx.arc(headCenterX - 4, headCenterY - 2, 2, 0, Math.PI * 2);
-    ctx.arc(headCenterX + 4, headCenterY - 2, 2, 0, Math.PI * 2);
-    ctx.fill();
+      ctx.fillStyle = '#FFE4B5';
+      ctx.beginPath();
+      ctx.arc(headCenterX, headCenterY, headRadius, 0, Math.PI * 2);
+      ctx.fill();
 
-    // 嘴巴（微笑）
-    ctx.strokeStyle = '#FF6B6B';
-    ctx.lineWidth = 1;
-    ctx.beginPath();
-    ctx.arc(headCenterX, headCenterY + 3, 4, 0, Math.PI);
-    ctx.stroke();
+      // 头发（长发）
+      ctx.fillStyle = '#DEB887';
+      ctx.beginPath();
+      ctx.arc(headCenterX, headCenterY - 2, headRadius + 2, Math.PI * 0.8, Math.PI * 2.2);
+      ctx.fill();
+      // 长发垂下
+      ctx.fillRect(this.x + 2, headCenterY, 6, 25);
+      ctx.fillRect(this.x + this.width - 8, headCenterY, 6, 25);
+
+      // 皇冠
+      ctx.fillStyle = '#FFD700';
+      ctx.beginPath();
+      ctx.moveTo(headCenterX - 8, headCenterY - 10);
+      ctx.lineTo(headCenterX - 6, headCenterY - 18);
+      ctx.lineTo(headCenterX - 3, headCenterY - 12);
+      ctx.lineTo(headCenterX, headCenterY - 20);
+      ctx.lineTo(headCenterX + 3, headCenterY - 12);
+      ctx.lineTo(headCenterX + 6, headCenterY - 18);
+      ctx.lineTo(headCenterX + 8, headCenterY - 10);
+      ctx.closePath();
+      ctx.fill();
+
+      // 皇冠宝石
+      ctx.fillStyle = '#FF0000';
+      ctx.beginPath();
+      ctx.arc(headCenterX, headCenterY - 15, 2, 0, Math.PI * 2);
+      ctx.fill();
+
+      // 眼睛
+      ctx.fillStyle = '#000';
+      ctx.beginPath();
+      ctx.arc(headCenterX - 4, headCenterY - 1, 2, 0, Math.PI * 2);
+      ctx.arc(headCenterX + 4, headCenterY - 1, 2, 0, Math.PI * 2);
+      ctx.fill();
+
+      // 睫毛
+      ctx.strokeStyle = '#000';
+      ctx.lineWidth = 1;
+      ctx.beginPath();
+      ctx.moveTo(headCenterX - 6, headCenterY - 3);
+      ctx.lineTo(headCenterX - 7, headCenterY - 5);
+      ctx.moveTo(headCenterX + 6, headCenterY - 3);
+      ctx.lineTo(headCenterX + 7, headCenterY - 5);
+      ctx.stroke();
+
+      // 嘴巴（微笑）
+      ctx.strokeStyle = '#FF6B6B';
+      ctx.lineWidth = 1;
+      ctx.beginPath();
+      ctx.arc(headCenterX, headCenterY + 4, 3, 0, Math.PI);
+      ctx.stroke();
+
+      // 腮红
+      ctx.fillStyle = 'rgba(255, 182, 193, 0.5)';
+      ctx.beginPath();
+      ctx.arc(headCenterX - 8, headCenterY + 2, 3, 0, Math.PI * 2);
+      ctx.arc(headCenterX + 8, headCenterY + 2, 3, 0, Math.PI * 2);
+      ctx.fill();
+    }
 
     ctx.restore();
   }
@@ -1091,4 +1277,3 @@ export class Trap {
     }
   }
 }
-
