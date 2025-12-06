@@ -250,100 +250,215 @@ export default {
 
     createPlatforms() {
       this.platforms = [];
+      const L = this.levelWidth;
+
+      // 定义四个主区域
+      const area1Start = 0;
+      const area1End = L * 0.25; // 第一区域：0 ~ 1/4
+      const area2Start = area1End;
+      const area2End = L * 0.5; // 第二区域：1/4 ~ 1/2
+      const area3Start = area2End;
+      const area3End = L * 0.75; // 第三区域：1/2 ~ 3/4
+      const area4Start = area3End;
+      const area4End = L; // 第四区域：3/4 ~ 1
+
+      // 区域宽度
+      const area1Width = area1End - area1Start;
+      const area2Width = area2End - area2Start;
+      const area3Width = area3End - area3Start;
+      const area4Width = area4End - area4Start;
 
       // 地面平台
-      this.platforms.push(new Platform(0, this.height - 50, this.levelWidth, 50, 'ground'));
+      this.platforms.push(new Platform(0, this.height - 50, L, 50, 'ground'));
 
-      // 第一区域：起始区（0-1500）
-      this.platforms.push(new Platform(200, this.height - 150, 200, 20, 'platform'));
-      this.platforms.push(new Platform(450, this.height - 200, 150, 20, 'platform'));
-      this.platforms.push(new Platform(700, this.height - 250, 180, 20, 'platform'));
-      this.platforms.push(new Platform(950, this.height - 180, 160, 20, 'platform'));
-      this.platforms.push(new Platform(1200, this.height - 220, 200, 20, 'platform'));
+      // ========== 第一区域：起始区 ==========
+      // 子区域划分：5个平台均匀分布
+      const sub1_1 = area1Start + area1Width * 0.1;
+      const sub1_2 = area1Start + area1Width * 0.25;
+      const sub1_3 = area1Start + area1Width * 0.4;
+      const sub1_4 = area1Start + area1Width * 0.55;
+      const sub1_5 = area1Start + area1Width * 0.75;
 
-      // 第二区域：中间挑战区（1500-3500）
-      for (let i = 0; i < 10; i++) {
-        const x = 1500 + i * 200;
+      this.platforms.push(new Platform(sub1_1, this.height - 150, 200, 20, 'platform'));
+      this.platforms.push(new Platform(sub1_2, this.height - 200, 150, 20, 'platform'));
+      this.platforms.push(new Platform(sub1_3, this.height - 250, 180, 20, 'platform'));
+      this.platforms.push(new Platform(sub1_4, this.height - 180, 160, 20, 'platform'));
+      this.platforms.push(new Platform(sub1_5, this.height - 220, 200, 20, 'platform'));
+
+      // ========== 第二区域：中间挑战区 ==========
+      // 10个平台，使用循环生成波浪形分布
+      const platformCount2 = 10;
+      const platformSpacing2 = area2Width / platformCount2;
+      for (let i = 0; i < platformCount2; i++) {
+        const x = area2Start + i * platformSpacing2;
         const y = this.height - 150 - Math.sin(i * 0.6) * 120;
         this.platforms.push(new Platform(x, y, 160, 20, 'platform'));
       }
 
-      // 第三区域：高空区（3500-5500）
-      this.platforms.push(new Platform(3600, this.height - 300, 200, 20, 'platform'));
-      this.platforms.push(new Platform(3900, this.height - 350, 180, 20, 'platform'));
-      this.platforms.push(new Platform(4200, this.height - 280, 200, 20, 'platform'));
-      this.platforms.push(new Platform(4500, this.height - 320, 160, 20, 'platform'));
-      this.platforms.push(new Platform(4800, this.height - 250, 200, 20, 'platform'));
-      this.platforms.push(new Platform(5100, this.height - 300, 180, 20, 'platform'));
+      // ========== 第三区域：高空区 ==========
+      // 6个平台均匀分布
+      const sub3_1 = area3Start + area3Width * 0.05;
+      const sub3_2 = area3Start + area3Width * 0.2;
+      const sub3_3 = area3Start + area3Width * 0.35;
+      const sub3_4 = area3Start + area3Width * 0.5;
+      const sub3_5 = area3Start + area3Width * 0.65;
+      const sub3_6 = area3Start + area3Width * 0.8;
 
-      // 第四区域：最终挑战区（5500-7500）
-      for (let i = 0; i < 8; i++) {
-        const x = 5500 + i * 250;
+      this.platforms.push(new Platform(sub3_1, this.height - 300, 200, 20, 'platform'));
+      this.platforms.push(new Platform(sub3_2, this.height - 350, 180, 20, 'platform'));
+      this.platforms.push(new Platform(sub3_3, this.height - 280, 200, 20, 'platform'));
+      this.platforms.push(new Platform(sub3_4, this.height - 320, 160, 20, 'platform'));
+      this.platforms.push(new Platform(sub3_5, this.height - 250, 200, 20, 'platform'));
+      this.platforms.push(new Platform(sub3_6, this.height - 300, 180, 20, 'platform'));
+
+      // ========== 第四区域：最终挑战区 ==========
+      // 8个平台，使用循环生成余弦波形分布
+      const platformCount4 = 8;
+      const platformSpacing4 = area4Width / platformCount4;
+      for (let i = 0; i < platformCount4; i++) {
+        const x = area4Start + i * platformSpacing4;
         const y = this.height - 180 - Math.cos(i * 0.5) * 100;
         this.platforms.push(new Platform(x, y, 170, 20, 'platform'));
       }
 
       // 终点区域平台
-      this.platforms.push(new Platform(7500, this.height - 150, 300, 20, 'platform'));
-      this.platforms.push(new Platform(7700, this.height - 100, 300, 20, 'platform'));
+      const endZone1 = L - L * 0.0625; // 距终点 6.25%
+      const endZone2 = L - L * 0.0375; // 距终点 3.75%
+      this.platforms.push(new Platform(endZone1, this.height - 150, 300, 20, 'platform'));
+      this.platforms.push(new Platform(endZone2, this.height - 100, 300, 20, 'platform'));
     },
 
     createEnemies() {
       this.enemies = [];
+      const L = this.levelWidth;
 
-      // 第一区域敌人（0-1500）
-      this.enemies.push(new Enemy(500, this.height - 100, 'patrol', 400, 700));
-      this.enemies.push(new Enemy(900, this.height - 100, 'patrol', 750, 1100));
-      this.enemies.push(new Enemy(1100, this.height - 280, 'fly', 900, 1300));
+      // 定义四个主区域
+      const area1Start = 0;
+      const area1End = L * 0.25;
+      const area2Start = area1End;
+      const area2End = L * 0.5;
+      const area3Start = area2End;
+      const area3End = L * 0.75;
+      const area4Start = area3End;
+      const area4End = L;
 
-      // 第二区域敌人（1500-3500）
-      this.enemies.push(new Enemy(1600, this.height - 100, 'patrol', 1450, 1800));
-      this.enemies.push(new Enemy(2100, this.height - 100, 'patrol', 1900, 2300));
-      this.enemies.push(new Enemy(2600, this.height - 100, 'patrol', 2400, 2800));
-      this.enemies.push(new Enemy(1900, this.height - 350, 'fly', 1700, 2200));
-      this.enemies.push(new Enemy(2900, this.height - 320, 'fly', 2700, 3100));
+      // 区域宽度
+      const area1Width = area1End - area1Start;
+      const area2Width = area2End - area2Start;
+      const area3Width = area3End - area3Start;
+      const area4Width = area4End - area4Start;
 
-      // 第三区域敌人（3500-5500）
-      this.enemies.push(new Enemy(3700, this.height - 100, 'patrol', 3500, 3900));
-      this.enemies.push(new Enemy(4300, this.height - 100, 'patrol', 4100, 4500));
-      this.enemies.push(new Enemy(4000, this.height - 400, 'fly', 3800, 4200));
-      this.enemies.push(new Enemy(4700, this.height - 350, 'fly', 4500, 4900));
+      // 巡逻范围宽度
+      const patrolRange = L * 0.025; // 巡逻范围为关卡长度的 2.5%
 
-      // 第四区域敌人（5500-7500）
-      this.enemies.push(new Enemy(5700, this.height - 100, 'patrol', 5500, 5900));
-      this.enemies.push(new Enemy(6200, this.height - 100, 'patrol', 6000, 6400));
-      this.enemies.push(new Enemy(6700, this.height - 100, 'patrol', 6500, 6900));
-      this.enemies.push(new Enemy(6000, this.height - 350, 'fly', 5800, 6300));
-      this.enemies.push(new Enemy(6900, this.height - 380, 'fly', 6700, 7200));
+      // ========== 第一区域敌人 ==========
+      const e1_1 = area1Start + area1Width * 0.25;
+      const e1_2 = area1Start + area1Width * 0.5;
+      const e1_3 = area1Start + area1Width * 0.65;
+      this.enemies.push(new Enemy(e1_1, this.height - 100, 'patrol', e1_1 - patrolRange, e1_1 + patrolRange));
+      this.enemies.push(new Enemy(e1_2, this.height - 100, 'patrol', e1_2 - patrolRange, e1_2 + patrolRange));
+      this.enemies.push(new Enemy(e1_3, this.height - 280, 'fly', e1_3 - patrolRange * 2, e1_3 + patrolRange * 2));
+
+      // ========== 第二区域敌人 ==========
+      const e2_1 = area2Start + area2Width * 0.05;
+      const e2_2 = area2Start + area2Width * 0.3;
+      const e2_3 = area2Start + area2Width * 0.55;
+      const e2_4 = area2Start + area2Width * 0.2;
+      const e2_5 = area2Start + area2Width * 0.7;
+      this.enemies.push(new Enemy(e2_1, this.height - 100, 'patrol', e2_1 - patrolRange, e2_1 + patrolRange));
+      this.enemies.push(new Enemy(e2_2, this.height - 100, 'patrol', e2_2 - patrolRange, e2_2 + patrolRange));
+      this.enemies.push(new Enemy(e2_3, this.height - 100, 'patrol', e2_3 - patrolRange, e2_3 + patrolRange));
+      this.enemies.push(new Enemy(e2_4, this.height - 350, 'fly', e2_4 - patrolRange * 2.5, e2_4 + patrolRange * 2.5));
+      this.enemies.push(new Enemy(e2_5, this.height - 320, 'fly', e2_5 - patrolRange * 2, e2_5 + patrolRange * 2));
+
+      // ========== 第三区域敌人 ==========
+      const e3_1 = area3Start + area3Width * 0.1;
+      const e3_2 = area3Start + area3Width * 0.4;
+      const e3_3 = area3Start + area3Width * 0.25;
+      const e3_4 = area3Start + area3Width * 0.6;
+      this.enemies.push(new Enemy(e3_1, this.height - 100, 'patrol', e3_1 - patrolRange, e3_1 + patrolRange));
+      this.enemies.push(new Enemy(e3_2, this.height - 100, 'patrol', e3_2 - patrolRange, e3_2 + patrolRange));
+      this.enemies.push(new Enemy(e3_3, this.height - 400, 'fly', e3_3 - patrolRange * 2, e3_3 + patrolRange * 2));
+      this.enemies.push(new Enemy(e3_4, this.height - 350, 'fly', e3_4 - patrolRange * 2, e3_4 + patrolRange * 2));
+
+      // ========== 第四区域敌人 ==========
+      const e4_1 = area4Start + area4Width * 0.1;
+      const e4_2 = area4Start + area4Width * 0.35;
+      const e4_3 = area4Start + area4Width * 0.6;
+      const e4_4 = area4Start + area4Width * 0.25;
+      const e4_5 = area4Start + area4Width * 0.7;
+      this.enemies.push(new Enemy(e4_1, this.height - 100, 'patrol', e4_1 - patrolRange, e4_1 + patrolRange));
+      this.enemies.push(new Enemy(e4_2, this.height - 100, 'patrol', e4_2 - patrolRange, e4_2 + patrolRange));
+      this.enemies.push(new Enemy(e4_3, this.height - 100, 'patrol', e4_3 - patrolRange, e4_3 + patrolRange));
+      this.enemies.push(new Enemy(e4_4, this.height - 350, 'fly', e4_4 - patrolRange * 2.5, e4_4 + patrolRange * 2.5));
+      this.enemies.push(new Enemy(e4_5, this.height - 380, 'fly', e4_5 - patrolRange * 2.5, e4_5 + patrolRange * 2.5));
 
       // 终点区域守卫
-      this.enemies.push(new Enemy(7300, this.height - 100, 'patrol', 7100, 7500));
+      const guardPos = L - L * 0.0875;
+      this.enemies.push(
+        new Enemy(guardPos, this.height - 100, 'patrol', guardPos - patrolRange, guardPos + patrolRange)
+      );
     },
 
     createTraps() {
       this.traps = [];
+      const L = this.levelWidth;
 
-      // 第一区域陷阱
-      this.traps.push(new Trap(650, this.height - 50, 180, 100, 'pit'));
-      this.traps.push(new Trap(1050, this.height - 70, 120, 20, 'spike'));
+      // 定义四个主区域
+      const area1Start = 0;
+      const area1End = L * 0.25;
+      const area2Start = area1End;
+      const area2End = L * 0.5;
+      const area3Start = area2End;
+      const area3End = L * 0.75;
+      const area4Start = area3End;
+      const area4End = L;
 
-      // 第二区域陷阱
-      this.traps.push(new Trap(1850, this.height - 70, 150, 20, 'spike'));
-      this.traps.push(new Trap(2300, this.height - 50, 200, 100, 'pit'));
-      this.traps.push(new Trap(2750, this.height - 70, 130, 20, 'spike'));
-      this.traps.push(new Trap(3150, this.height - 50, 180, 100, 'pit'));
+      // 区域宽度
+      const area1Width = area1End - area1Start;
+      const area2Width = area2End - area2Start;
+      const area3Width = area3End - area3Start;
+      const area4Width = area4End - area4Start;
 
-      // 第三区域陷阱
-      this.traps.push(new Trap(3850, this.height - 70, 150, 20, 'spike'));
-      this.traps.push(new Trap(4350, this.height - 50, 200, 100, 'pit'));
-      this.traps.push(new Trap(4850, this.height - 70, 140, 20, 'spike'));
-      this.traps.push(new Trap(5250, this.height - 50, 180, 100, 'pit'));
+      // 陷阱尺寸
+      const pitWidth = L * 0.025; // 坑宽度
+      const spikeWidth = L * 0.018; // 尖刺宽度
 
-      // 第四区域陷阱
-      this.traps.push(new Trap(5850, this.height - 70, 150, 20, 'spike'));
-      this.traps.push(new Trap(6350, this.height - 50, 180, 100, 'pit'));
-      this.traps.push(new Trap(6800, this.height - 70, 160, 20, 'spike'));
-      this.traps.push(new Trap(7100, this.height - 50, 150, 100, 'pit'));
+      // ========== 第一区域陷阱 ==========
+      const t1_1 = area1Start + area1Width * 0.35;
+      const t1_2 = area1Start + area1Width * 0.55;
+      this.traps.push(new Trap(t1_1, this.height - 50, pitWidth, 100, 'pit'));
+      this.traps.push(new Trap(t1_2, this.height - 70, spikeWidth, 20, 'spike'));
+
+      // ========== 第二区域陷阱 ==========
+      const t2_1 = area2Start + area2Width * 0.175;
+      const t2_2 = area2Start + area2Width * 0.4;
+      const t2_3 = area2Start + area2Width * 0.625;
+      const t2_4 = area2Start + area2Width * 0.825;
+      this.traps.push(new Trap(t2_1, this.height - 70, spikeWidth, 20, 'spike'));
+      this.traps.push(new Trap(t2_2, this.height - 50, pitWidth, 100, 'pit'));
+      this.traps.push(new Trap(t2_3, this.height - 70, spikeWidth, 20, 'spike'));
+      this.traps.push(new Trap(t2_4, this.height - 50, pitWidth, 100, 'pit'));
+
+      // ========== 第三区域陷阱 ==========
+      const t3_1 = area3Start + area3Width * 0.175;
+      const t3_2 = area3Start + area3Width * 0.425;
+      const t3_3 = area3Start + area3Width * 0.675;
+      const t3_4 = area3Start + area3Width * 0.875;
+      this.traps.push(new Trap(t3_1, this.height - 70, spikeWidth, 20, 'spike'));
+      this.traps.push(new Trap(t3_2, this.height - 50, pitWidth, 100, 'pit'));
+      this.traps.push(new Trap(t3_3, this.height - 70, spikeWidth, 20, 'spike'));
+      this.traps.push(new Trap(t3_4, this.height - 50, pitWidth, 100, 'pit'));
+
+      // ========== 第四区域陷阱 ==========
+      const t4_1 = area4Start + area4Width * 0.175;
+      const t4_2 = area4Start + area4Width * 0.425;
+      const t4_3 = area4Start + area4Width * 0.65;
+      const t4_4 = area4Start + area4Width * 0.8;
+      this.traps.push(new Trap(t4_1, this.height - 70, spikeWidth, 20, 'spike'));
+      this.traps.push(new Trap(t4_2, this.height - 50, pitWidth, 100, 'pit'));
+      this.traps.push(new Trap(t4_3, this.height - 70, spikeWidth, 20, 'spike'));
+      this.traps.push(new Trap(t4_4, this.height - 50, pitWidth, 100, 'pit'));
     },
 
     update(deltaTime) {
