@@ -794,12 +794,12 @@ class Game {
   }
 
   renderMenu() {
-    // 背景 - 渐变紫色（与原版一致）
-    const gradient = this.ctx.createLinearGradient(0, 0, this.width, this.height);
-    gradient.addColorStop(0, '#667eea');
-    gradient.addColorStop(1, '#764ba2');
-    this.ctx.fillStyle = gradient;
+    // 背景 - 天蓝色（与游戏界面一致）
+    this.ctx.fillStyle = '#87CEEB';
     this.ctx.fillRect(0, 0, this.width, this.height);
+
+    // 绘制白云背景
+    this.drawMenuClouds();
 
     // 更新菜单按钮位置（横屏适配）
     const menuBtnWidth = Math.min(180, (this.width - 80) / 3);
@@ -824,21 +824,27 @@ class Game {
     this.menuButtons.sound.width = menuBtnWidth;
     this.menuButtons.sound.height = menuBtnHeight;
 
-    // 标题 - 根据屏幕调整
+    // 标题 - 根据屏幕调整（金色带深色阴影，在天蓝色背景上醒目）
     const titleSize = Math.min(48, this.height / 5, this.width / 10);
-    this.ctx.fillStyle = '#FFFFFF';
     this.ctx.font = `bold ${titleSize}px Arial`;
     this.ctx.textAlign = 'center';
-    this.ctx.shadowColor = 'rgba(0, 0, 0, 0.3)';
-    this.ctx.shadowBlur = 4;
+    // 文字阴影效果
+    this.ctx.shadowColor = 'rgba(0, 0, 0, 0.5)';
+    this.ctx.shadowBlur = 6;
+    this.ctx.shadowOffsetX = 2;
+    this.ctx.shadowOffsetY = 2;
+    this.ctx.fillStyle = '#FFD700'; // 金色标题
     this.ctx.fillText('钱程似金', this.width / 2, this.height / 2 - menuBtnHeight);
 
     // 副标题
     const subTitleSize = Math.min(20, this.height / 10);
-    this.ctx.fillStyle = 'rgba(255, 255, 255, 0.8)';
+    this.ctx.fillStyle = '#FFFFFF';
     this.ctx.font = `${subTitleSize}px Arial`;
+    this.ctx.shadowBlur = 4;
     this.ctx.fillText('JinShuo Loves ChengYan', this.width / 2, this.height / 2 - menuBtnHeight / 3);
     this.ctx.shadowBlur = 0;
+    this.ctx.shadowOffsetX = 0;
+    this.ctx.shadowOffsetY = 0;
 
     // 绘制三个菜单按钮
     const btnRadius = Math.min(25, menuBtnHeight / 2);
@@ -1000,6 +1006,30 @@ class Game {
       {x: 1800, y: 120, w: 110, h: 55},
       {x: 2500, y: 90, w: 100, h: 50},
       {x: 3200, y: 140, w: 95, h: 48},
+    ];
+
+    clouds.forEach((cloud) => {
+      this.ctx.beginPath();
+      this.ctx.arc(cloud.x, cloud.y, cloud.h / 2, Math.PI, 2 * Math.PI);
+      this.ctx.arc(cloud.x + cloud.w / 2, cloud.y - cloud.h / 4, cloud.h * 0.6, Math.PI, 2 * Math.PI);
+      this.ctx.arc(cloud.x + cloud.w, cloud.y, cloud.h / 2, Math.PI, 2 * Math.PI);
+      this.ctx.closePath();
+      this.ctx.fill();
+    });
+  }
+
+  // 菜单界面的云朵（根据屏幕尺寸分布）
+  drawMenuClouds() {
+    this.ctx.fillStyle = 'rgba(255, 255, 255, 0.8)';
+
+    // 根据屏幕宽度动态生成云朵位置
+    const clouds = [
+      {x: this.width * 0.1, y: this.height * 0.15, w: 80, h: 40},
+      {x: this.width * 0.35, y: this.height * 0.08, w: 100, h: 50},
+      {x: this.width * 0.6, y: this.height * 0.2, w: 90, h: 45},
+      {x: this.width * 0.85, y: this.height * 0.12, w: 70, h: 35},
+      {x: this.width * 0.2, y: this.height * 0.85, w: 60, h: 30},
+      {x: this.width * 0.75, y: this.height * 0.8, w: 75, h: 38},
     ];
 
     clouds.forEach((cloud) => {
