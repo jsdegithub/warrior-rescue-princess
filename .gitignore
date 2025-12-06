@@ -30,4 +30,7 @@ Thumbs.db
 .env
 .env.*
 
-wx_upload_secretkey
+# WeChat credentials & private configs
+wx_upload_secretkey/
+project.private.config.json
+minigame/project.private.config.json
