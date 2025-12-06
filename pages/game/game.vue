@@ -101,7 +101,7 @@ export default {
       hearts: [],
       cameraX: 0,
 
-      levelWidth: 8000,
+      levelWidth: 12000,
 
       // 计时系统
       gameTimer: 0, // 游戏计时（毫秒）
@@ -348,8 +348,8 @@ export default {
       const area3Width = area3End - area3Start;
       const area4Width = area4End - area4Start;
 
-      // 巡逻范围宽度
-      const patrolRange = L * 0.025; // 巡逻范围为关卡长度的 2.5%
+      // 巡逻范围宽度（固定值，不随关卡长度变化，确保游戏体验一致）
+      const patrolRange = 200;
 
       // ========== 第一区域敌人 ==========
       const e1_1 = area1Start + area1Width * 0.25;
@@ -420,9 +420,9 @@ export default {
       const area3Width = area3End - area3Start;
       const area4Width = area4End - area4Start;
 
-      // 陷阱尺寸
-      const pitWidth = L * 0.025; // 坑宽度
-      const spikeWidth = L * 0.018; // 尖刺宽度
+      // 陷阱尺寸（固定值，不随关卡长度变化，确保玩家始终能跨越）
+      const pitWidth = 180; // 坑宽度
+      const spikeWidth = 140; // 尖刺宽度
 
       // ========== 第一区域陷阱 ==========
       const t1_1 = area1Start + area1Width * 0.35;
