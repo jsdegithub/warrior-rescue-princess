@@ -220,7 +220,7 @@ class Game {
         }
 
         // 检测暂停按钮（血条左侧）
-        if (this.isPointInRect(touch.clientX, touch.clientY, {x: 15, y: 18, width: 28, height: 28})) {
+        if (this.isPointInRect(touch.clientX, touch.clientY, {x: 25, y: 18, width: 28, height: 28})) {
           this.pauseGame();
         }
       }
@@ -1179,7 +1179,7 @@ class Game {
     const floatOffset = Math.sin(this.avatarFloatTime / 500) * 8; // 3秒周期，上下8px
 
     // 绘制勇士头像（左侧，带悬浮效果）
-    this.drawAvatar(this.warriorAvatar, 15, 55 + floatOffset, '勇士', '#4169E1');
+    this.drawAvatar(this.warriorAvatar, 15, 65 + floatOffset, '勇士', '#4169E1');
 
     // 绘制公主头像（右侧，带悬浮效果）
     this.drawAvatar(this.princessAvatar, this.width - 70, 55 + floatOffset, '公主', '#FFD700');
@@ -1207,13 +1207,13 @@ class Game {
 
     // 暂停按钮（血条左侧）- 用Canvas绘制避免emoji渲染问题
     this.ctx.fillStyle = 'rgba(0, 0, 0, 0.5)';
-    this.roundRect(15, 18, 28, 28, 8);
+    this.roundRect(25, 18, 28, 28, 8);
     this.ctx.fill();
 
     // 绘制暂停图标（两条竖线）
     this.ctx.fillStyle = '#FFFFFF';
-    this.ctx.fillRect(22, 26, 4, 12); // 左竖线
-    this.ctx.fillRect(31, 26, 4, 12); // 右竖线
+    this.ctx.fillRect(32, 26, 4, 12); // 左竖线
+    this.ctx.fillRect(41, 26, 4, 12); // 右竖线
 
     // 虚拟按钮（增大尺寸和字体）
     this.touchButtons.forEach((btn) => {
