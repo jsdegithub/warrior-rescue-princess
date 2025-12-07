@@ -36,6 +36,9 @@ export class Warrior {
     this.hasSword = false;
     this.swordSwingAngle = 0;
 
+    // 伤害回调（用于通知外部扣分等）
+    this.onDamageCallback = null;
+
     // 精灵图
     this.sprites = {
       idle: null,
@@ -301,6 +304,10 @@ export class Warrior {
     this.isInvulnerable = true;
     this.invulnerableTime = 2000;
     this.soundManager.hurt();
+    // 调用伤害回调（通知外部扣分）
+    if (this.onDamageCallback) {
+      this.onDamageCallback();
+    }
   }
 
   draw(ctx) {

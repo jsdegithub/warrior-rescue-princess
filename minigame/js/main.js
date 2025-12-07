@@ -355,6 +355,10 @@ class Game {
     // 勇士初始位置：站在地面上（地面在 height - 50，勇士高度 60）
     const warriorStartY = this.height - 50 - 60;
     this.warrior = new Warrior(100, warriorStartY, this.soundManager);
+    // 设置伤害回调（任何伤害都扣分）
+    this.warrior.onDamageCallback = () => {
+      this.deductScore(5000);
+    };
     this.princess = new Princess(this.levelWidth - 300, this.height - 110);
 
     this.createPlatforms();
@@ -718,7 +722,7 @@ class Game {
             } else if (!this.warrior.isInvulnerable && !this.warrior.isAttacking) {
               this.warrior.takeDamage();
               this.health = this.warrior.health;
-              this.deductScore(5000); // 受伤扣5000分
+              // 扣分由 onDamageCallback 统一处理
             }
           }
         }
@@ -809,9 +813,15 @@ class Game {
     this.bonusScore += bonus;
   }
 
-  // 扣分（从奖励分中扣除）
+  // 扣分（从奖励分中扣除，确保总分不为负）
   deductScore(amount) {
-    this.bonusScore -= amount;
+    const currentTotal = this.maxReachedX + this.bonusScore;
+    if (currentTotal <= amount) {
+      // 当前分数不足以扣除，直接将奖励分设为负的进度分（使总分为0）
+      this.bonusScore = -this.maxReachedX;
+    } else {
+      this.bonusScore -= amount;
+    }
   }
 
   // 添加奖励分
