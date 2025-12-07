@@ -1112,11 +1112,34 @@ class Game {
       this.ctx.fill();
       this.ctx.stroke();
 
+      // 绘制按钮内容
+      const centerX = btn.x + btn.width / 2;
+      const centerY = btn.y + btn.height / 2;
       this.ctx.fillStyle = '#FFFFFF';
-      this.ctx.font = 'bold 26px Arial'; // 字体从 20px 增大到 26px
-      this.ctx.textAlign = 'center';
-      this.ctx.fillText(btn.label, btn.x + btn.width / 2, btn.y + btn.height / 2 + 9);
-      this.ctx.textAlign = 'left';
+
+      if (btn.id === 'left') {
+        // 左三角形 ◀
+        this.ctx.beginPath();
+        this.ctx.moveTo(centerX + 12, centerY - 15);
+        this.ctx.lineTo(centerX - 12, centerY);
+        this.ctx.lineTo(centerX + 12, centerY + 15);
+        this.ctx.closePath();
+        this.ctx.fill();
+      } else if (btn.id === 'right') {
+        // 右三角形 ▶
+        this.ctx.beginPath();
+        this.ctx.moveTo(centerX - 12, centerY - 15);
+        this.ctx.lineTo(centerX + 12, centerY);
+        this.ctx.lineTo(centerX - 12, centerY + 15);
+        this.ctx.closePath();
+        this.ctx.fill();
+      } else {
+        // 其他按钮显示文字
+        this.ctx.font = 'bold 26px Arial';
+        this.ctx.textAlign = 'center';
+        this.ctx.fillText(btn.label, centerX, centerY + 9);
+        this.ctx.textAlign = 'left';
+      }
     });
   }
 
