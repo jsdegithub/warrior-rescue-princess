@@ -62,6 +62,8 @@ class Game {
     // 触摸状态
     this.touches = {};
     this.touchButtons = [];
+    this.buttonRipples = []; // 按钮水纹效果
+    this.pressedButtons = {}; // 按压状态
 
     // 动画帧
     this.lastTime = 0;
@@ -215,6 +217,17 @@ class Game {
           if (this.isPointInRect(touch.clientX, touch.clientY, btn)) {
             this.touches[touchId] = btn.id;
             this.input[btn.id] = true;
+            // 记录按压状态
+            this.pressedButtons[btn.id] = true;
+            // 添加水纹效果
+            this.buttonRipples.push({
+              x: btn.x + btn.width / 2,
+              y: btn.y + btn.height / 2,
+              radius: 0,
+              maxRadius: btn.width * 0.8,
+              alpha: 0.6,
+              btnId: btn.id,
+            });
             break;
           }
         }
@@ -315,6 +328,8 @@ class Game {
 
       if (btnId) {
         this.input[btnId] = false;
+        // 取消按压状态
+        this.pressedButtons[btnId] = false;
         delete this.touches[touchId];
       }
     }
@@ -725,6 +740,13 @@ class Game {
         heart.rotation += heart.rotationSpeed;
       });
     }
+
+    // 更新按钮水纹效果
+    this.buttonRipples = this.buttonRipples.filter((ripple) => {
+      ripple.radius += 3;
+      ripple.alpha -= 0.03;
+      return ripple.alpha > 0;
+    });
   }
 
   updateCamera() {
@@ -1217,18 +1239,42 @@ class Game {
 
     // 虚拟按钮（增大尺寸和字体）
     this.touchButtons.forEach((btn) => {
-      this.ctx.fillStyle = btn.color || 'rgba(255, 255, 255, 0.3)';
-      this.ctx.strokeStyle = 'rgba(255, 255, 255, 0.6)';
-      this.ctx.lineWidth = 3;
+      const isPressed = this.pressedButtons[btn.id];
+      const centerX = btn.x + btn.width / 2;
+      const centerY = btn.y + btn.height / 2;
+      const radius = btn.width / 2;
+
+      // 按压时缩小效果
+      const scale = isPressed ? 0.9 : 1;
+      const drawRadius = radius * scale;
+
+      // 绘制水纹效果
+      this.buttonRipples
+        .filter((r) => r.btnId === btn.id)
+        .forEach((ripple) => {
+          this.ctx.beginPath();
+          this.ctx.arc(ripple.x, ripple.y, ripple.radius, 0, Math.PI * 2);
+          this.ctx.strokeStyle = `rgba(255, 255, 255, ${ripple.alpha})`;
+          this.ctx.lineWidth = 3;
+          this.ctx.stroke();
+        });
+
+      // 按压时颜色变深
+      if (isPressed) {
+        const baseColor = btn.color || 'rgba(255, 255, 255, 0.3)';
+        this.ctx.fillStyle = baseColor.replace(/[\d.]+\)$/, '0.6)');
+      } else {
+        this.ctx.fillStyle = btn.color || 'rgba(255, 255, 255, 0.3)';
+      }
+      this.ctx.strokeStyle = isPressed ? 'rgba(255, 255, 255, 0.9)' : 'rgba(255, 255, 255, 0.6)';
+      this.ctx.lineWidth = isPressed ? 4 : 3;
 
       this.ctx.beginPath();
-      this.ctx.arc(btn.x + btn.width / 2, btn.y + btn.height / 2, btn.width / 2, 0, Math.PI * 2);
+      this.ctx.arc(centerX, centerY, drawRadius, 0, Math.PI * 2);
       this.ctx.fill();
       this.ctx.stroke();
 
       // 绘制按钮内容
-      const centerX = btn.x + btn.width / 2;
-      const centerY = btn.y + btn.height / 2;
       this.ctx.fillStyle = '#FFFFFF';
 
       if (btn.id === 'left') {
