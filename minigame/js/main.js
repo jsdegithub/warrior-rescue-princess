@@ -41,9 +41,9 @@ class Game {
     this.cameraX = 0;
     this.levelWidth = 12000;
 
-    // 计时器
-    this.gameTimer = 0;
-    this.timerStarted = false;
+    // 得分系统
+    this.score = 0;
+    this.scoreStarted = false;
 
     // 生命值
     this.health = 3;
@@ -347,8 +347,8 @@ class Game {
     this.health = 3;
     this.victoryTriggered = false;
 
-    this.gameTimer = 0;
-    this.timerStarted = true;
+    this.score = 0;
+    this.scoreStarted = true;
   }
 
   createPlatforms() {
@@ -617,9 +617,9 @@ class Game {
   // 更新游戏逻辑
   update(deltaTime) {
     if (this.gameState === 'playing') {
-      // 更新计时器
-      if (this.timerStarted && !this.victoryTriggered) {
-        this.gameTimer += deltaTime;
+      // 更新得分（每毫秒+1分）
+      if (this.scoreStarted && !this.victoryTriggered) {
+        this.score += deltaTime;
       }
 
       // 构建输入（胜利时禁止移动）
@@ -675,6 +675,7 @@ class Game {
           // 大宝剑攻击
           if (this.warrior.hasSword && this.warrior.isAttacking && this.checkSwordHit(enemy)) {
             enemy.defeat();
+            this.addKillScore(enemy);
             return;
           }
 
@@ -682,12 +683,15 @@ class Game {
           if (this.warrior.checkCollision(enemy)) {
             if (this.warrior.vy > 0 && this.warrior.y < enemy.y) {
               enemy.defeat();
+              this.addKillScore(enemy);
               this.warrior.vy = -8;
             } else if (this.warrior.isAttacking && !this.warrior.hasSword) {
               enemy.defeat();
+              this.addKillScore(enemy);
             } else if (!this.warrior.isInvulnerable && !this.warrior.isAttacking) {
               this.warrior.takeDamage();
               this.health = this.warrior.health;
+              this.deductScore(10000); // 受伤扣10000分
             }
           }
         }
@@ -742,6 +746,33 @@ class Game {
         this.gameState = 'victory';
       }, 1000);
     }
+  }
+
+  // 击杀敌人加分
+  addKillScore(enemy) {
+    let bonus = 0;
+    switch (enemy.type) {
+      case 'normal':
+        bonus = 5000; // 普通地面怪
+        break;
+      case 'fly':
+        bonus = 10000; // 普通飞行怪
+        break;
+      case 'shooter':
+        bonus = 20000; // 地面射击怪
+        break;
+      case 'fly_shooter':
+        bonus = 30000; // 飞行射击怪
+        break;
+      default:
+        bonus = 5000;
+    }
+    this.score += bonus;
+  }
+
+  // 扣分（保证不小于0）
+  deductScore(amount) {
+    this.score = Math.max(0, this.score - amount);
   }
 
   checkGameOver() {
@@ -1109,19 +1140,18 @@ class Game {
       this.ctx.fillText('❤', 60 + i * 40, 42);
     }
 
-    // 计时器
-    const seconds = Math.floor(this.gameTimer / 1000);
-    const milliseconds = Math.floor(this.gameTimer % 1000);
-    const timeText = `${seconds}.${milliseconds.toString().padStart(3, '0')}`;
+    // 得分显示
+    const scoreValue = Math.floor(Math.max(0, this.score));
+    const scoreText = `得分: ${scoreValue}`;
 
     this.ctx.fillStyle = 'rgba(0, 0, 0, 0.6)';
-    this.roundRect(this.width / 2 - 60, 15, 120, 40, 15);
+    this.roundRect(this.width / 2 - 80, 15, 160, 40, 15);
     this.ctx.fill();
 
     this.ctx.fillStyle = '#FFD700';
-    this.ctx.font = 'bold 24px Courier New';
+    this.ctx.font = 'bold 20px Arial';
     this.ctx.textAlign = 'center';
-    this.ctx.fillText(timeText, this.width / 2, 45);
+    this.ctx.fillText(scoreText, this.width / 2, 42);
     this.ctx.textAlign = 'left';
 
     // 暂停按钮（血条左侧）- 用Canvas绘制避免emoji渲染问题
@@ -1236,14 +1266,20 @@ class Game {
     this.ctx.fillStyle = '#FFD700';
     this.ctx.font = `bold ${Math.min(28, this.height / 8)}px Arial`;
     this.ctx.textAlign = 'center';
-    this.ctx.fillText('🎉 恭喜通关!', this.width / 2, centerY - btnSpacing * 1.5);
+    this.ctx.fillText('🎉 恭喜通关!', this.width / 2, centerY - btnSpacing * 2);
 
     this.ctx.fillStyle = '#FFFFFF';
     this.ctx.font = `${Math.min(18, this.height / 12)}px Arial`;
-    this.ctx.fillText('喜结良缘，钱程似锦！', this.width / 2, centerY - btnSpacing * 0.5);
+    this.ctx.fillText('喜结良缘，钱程似锦！', this.width / 2, centerY - btnSpacing * 1.2);
 
-    this.renderMenuButton('再玩一次', centerY + btnSpacing * 0.5);
-    this.renderMenuButton('返回菜单', centerY + btnSpacing * 1.5);
+    // 显示总得分
+    const finalScore = Math.floor(Math.max(0, this.score));
+    this.ctx.fillStyle = '#00FF00';
+    this.ctx.font = `bold ${Math.min(22, this.height / 10)}px Arial`;
+    this.ctx.fillText(`总得分: ${finalScore}`, this.width / 2, centerY - btnSpacing * 0.3);
+
+    this.renderMenuButton('再玩一次', centerY + btnSpacing * 0.7);
+    this.renderMenuButton('返回菜单', centerY + btnSpacing * 1.7);
 
     this.ctx.textAlign = 'left';
   }
@@ -1259,10 +1295,16 @@ class Game {
     this.ctx.fillStyle = '#FF6B6B';
     this.ctx.font = `bold ${Math.min(24, this.height / 10)}px Arial`;
     this.ctx.textAlign = 'center';
-    this.ctx.fillText('燕子，没有你我怎么活啊~', this.width / 2, centerY - btnSpacing);
+    this.ctx.fillText('燕子，没有你我怎么活啊~', this.width / 2, centerY - btnSpacing * 1.5);
 
-    this.renderMenuButton('重新开始', centerY + btnSpacing * 0.3);
-    this.renderMenuButton('返回菜单', centerY + btnSpacing * 1.3);
+    // 显示总得分
+    const finalScore = Math.floor(Math.max(0, this.score));
+    this.ctx.fillStyle = '#FFD700';
+    this.ctx.font = `bold ${Math.min(20, this.height / 11)}px Arial`;
+    this.ctx.fillText(`总得分: ${finalScore}`, this.width / 2, centerY - btnSpacing * 0.5);
+
+    this.renderMenuButton('重新开始', centerY + btnSpacing * 0.5);
+    this.renderMenuButton('返回菜单', centerY + btnSpacing * 1.5);
 
     this.ctx.textAlign = 'left';
   }
