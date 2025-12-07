@@ -74,6 +74,9 @@ class Game {
     // 头像悬浮动画时间
     this.avatarFloatTime = 0;
 
+    // 菜单云朵动画偏移
+    this.menuCloudOffset = 0;
+
     // 初始化触摸控制
     this.initTouchControls();
 
@@ -819,11 +822,15 @@ class Game {
   }
 
   renderMenu() {
+    // 更新动画时间
+    this.avatarFloatTime += 16;
+    this.menuCloudOffset += 0.3; // 云朵移动速度
+
     // 背景 - 天蓝色（与游戏界面一致）
     this.ctx.fillStyle = '#87CEEB';
     this.ctx.fillRect(0, 0, this.width, this.height);
 
-    // 绘制白云背景
+    // 绘制白云背景（动态）
     this.drawMenuClouds();
 
     // 更新菜单按钮位置（横屏适配）
@@ -849,7 +856,10 @@ class Game {
     this.menuButtons.sound.width = menuBtnWidth;
     this.menuButtons.sound.height = menuBtnHeight;
 
-    // 标题 - 根据屏幕调整（金色带深色阴影，在天蓝色背景上醒目）
+    // 计算呼吸悬浮效果
+    const floatOffset = Math.sin(this.avatarFloatTime / 500) * 6;
+
+    // 标题 - 根据屏幕调整（金色带深色阴影，带呼吸悬浮效果）
     const titleSize = Math.min(48, this.height / 5, this.width / 10);
     this.ctx.font = `bold ${titleSize}px Arial`;
     this.ctx.textAlign = 'center';
@@ -859,14 +869,14 @@ class Game {
     this.ctx.shadowOffsetX = 2;
     this.ctx.shadowOffsetY = 2;
     this.ctx.fillStyle = '#FFD700'; // 金色标题
-    this.ctx.fillText('钱程似金', this.width / 2, this.height / 2 - menuBtnHeight);
+    this.ctx.fillText('钱程似金', this.width / 2, this.height / 2 - menuBtnHeight + floatOffset);
 
-    // 副标题
+    // 副标题（与主标题同步悬浮）
     const subTitleSize = Math.min(20, this.height / 10);
     this.ctx.fillStyle = '#FFFFFF';
     this.ctx.font = `${subTitleSize}px Arial`;
     this.ctx.shadowBlur = 4;
-    this.ctx.fillText('JinShuo Loves ChengYan', this.width / 2, this.height / 2 - menuBtnHeight / 3);
+    this.ctx.fillText('JinShuo Loves ChengYan', this.width / 2, this.height / 2 - menuBtnHeight / 3 + floatOffset);
     this.ctx.shadowBlur = 0;
     this.ctx.shadowOffsetX = 0;
     this.ctx.shadowOffsetY = 0;
@@ -1047,21 +1057,28 @@ class Game {
   drawMenuClouds() {
     this.ctx.fillStyle = 'rgba(255, 255, 255, 0.8)';
 
-    // 根据屏幕宽度动态生成云朵位置
-    const clouds = [
-      {x: this.width * 0.1, y: this.height * 0.15, w: 80, h: 40},
-      {x: this.width * 0.35, y: this.height * 0.08, w: 100, h: 50},
-      {x: this.width * 0.6, y: this.height * 0.2, w: 90, h: 45},
-      {x: this.width * 0.85, y: this.height * 0.12, w: 70, h: 35},
-      {x: this.width * 0.2, y: this.height * 0.85, w: 60, h: 30},
-      {x: this.width * 0.75, y: this.height * 0.8, w: 75, h: 38},
+    // 云朵基础位置和速度倍数（不同云朵移动速度略有不同）
+    const cloudsBase = [
+      {baseX: 0.1, y: this.height * 0.15, w: 80, h: 40, speed: 1.0},
+      {baseX: 0.35, y: this.height * 0.08, w: 100, h: 50, speed: 0.7},
+      {baseX: 0.6, y: this.height * 0.2, w: 90, h: 45, speed: 1.2},
+      {baseX: 0.85, y: this.height * 0.12, w: 70, h: 35, speed: 0.9},
+      {baseX: 0.2, y: this.height * 0.85, w: 60, h: 30, speed: 0.8},
+      {baseX: 0.75, y: this.height * 0.8, w: 75, h: 38, speed: 1.1},
     ];
 
-    clouds.forEach((cloud) => {
+    cloudsBase.forEach((cloud) => {
+      // 计算云朵当前 X 位置（从右向左移动，循环）
+      let cloudX = this.width * cloud.baseX - this.menuCloudOffset * cloud.speed;
+
+      // 当云朵移出左边界时，从右边重新进入
+      const totalWidth = this.width + cloud.w * 2;
+      cloudX = (((cloudX % totalWidth) + totalWidth) % totalWidth) - cloud.w;
+
       this.ctx.beginPath();
-      this.ctx.arc(cloud.x, cloud.y, cloud.h / 2, Math.PI, 2 * Math.PI);
-      this.ctx.arc(cloud.x + cloud.w / 2, cloud.y - cloud.h / 4, cloud.h * 0.6, Math.PI, 2 * Math.PI);
-      this.ctx.arc(cloud.x + cloud.w, cloud.y, cloud.h / 2, Math.PI, 2 * Math.PI);
+      this.ctx.arc(cloudX, cloud.y, cloud.h / 2, Math.PI, 2 * Math.PI);
+      this.ctx.arc(cloudX + cloud.w / 2, cloud.y - cloud.h / 4, cloud.h * 0.6, Math.PI, 2 * Math.PI);
+      this.ctx.arc(cloudX + cloud.w, cloud.y, cloud.h / 2, Math.PI, 2 * Math.PI);
       this.ctx.closePath();
       this.ctx.fill();
     });
