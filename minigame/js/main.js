@@ -587,7 +587,8 @@ class Game {
         item.collected = true;
         if (item.type === 'sword') {
           this.warrior.equipSword();
-          this.soundManager.playSound(800, 0.2, 'sine');
+          // 拾取音效（使用挥剑音效代替）
+          this.soundManager.slashSword();
         }
       }
     });
@@ -674,7 +675,6 @@ class Game {
           // 大宝剑攻击
           if (this.warrior.hasSword && this.warrior.isAttacking && this.checkSwordHit(enemy)) {
             enemy.defeat();
-            this.soundManager.defeat();
             return;
           }
 
@@ -683,10 +683,8 @@ class Game {
             if (this.warrior.vy > 0 && this.warrior.y < enemy.y) {
               enemy.defeat();
               this.warrior.vy = -8;
-              this.soundManager.defeat();
             } else if (this.warrior.isAttacking && !this.warrior.hasSword) {
               enemy.defeat();
-              this.soundManager.defeat();
             } else if (!this.warrior.isInvulnerable && !this.warrior.isAttacking) {
               this.warrior.takeDamage();
               this.health = this.warrior.health;
@@ -750,6 +748,7 @@ class Game {
     if (this.warrior.health <= 0) {
       this.gameState = 'gameover';
       this.soundManager.stopRunning();
+      this.soundManager.defeat(); // 播放主角死亡音效
     }
   }
 
