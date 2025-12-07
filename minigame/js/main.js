@@ -156,6 +156,7 @@ class Game {
 
     // 游戏说明弹窗状态
     this.showHelp = false;
+    this.helpCloseButton = {x: 0, y: 0, width: 30, height: 30};
 
     // 触摸事件
     wx.onTouchStart((e) => this.handleTouchStart(e));
@@ -168,9 +169,11 @@ class Game {
 
     if (this.gameState === 'menu') {
       for (const touch of touches) {
-        // 如果显示帮助弹窗，点击任意位置关闭
+        // 如果显示帮助弹窗，只有点击关闭按钮才关闭
         if (this.showHelp) {
-          this.showHelp = false;
+          if (this.isPointInRect(touch.clientX, touch.clientY, this.helpCloseButton)) {
+            this.showHelp = false;
+          }
           return;
         }
 
@@ -1022,6 +1025,36 @@ class Game {
     this.roundRect(popupX, popupY, popupWidth, popupHeight, 15);
     this.ctx.fill();
 
+    // 关闭按钮（右上角）
+    const closeSize = 28;
+    const closePadding = 10;
+    const closeX = popupX + popupWidth - closeSize - closePadding;
+    const closeY = popupY + closePadding;
+
+    // 保存关闭按钮位置
+    this.helpCloseButton.x = closeX;
+    this.helpCloseButton.y = closeY;
+    this.helpCloseButton.width = closeSize;
+    this.helpCloseButton.height = closeSize;
+
+    // 绘制关闭按钮圆形背景
+    this.ctx.fillStyle = 'rgba(200, 200, 200, 0.8)';
+    this.ctx.beginPath();
+    this.ctx.arc(closeX + closeSize / 2, closeY + closeSize / 2, closeSize / 2, 0, Math.PI * 2);
+    this.ctx.fill();
+
+    // 绘制 X 图标
+    this.ctx.strokeStyle = '#555';
+    this.ctx.lineWidth = 2.5;
+    this.ctx.lineCap = 'round';
+    const xPadding = 8;
+    this.ctx.beginPath();
+    this.ctx.moveTo(closeX + xPadding, closeY + xPadding);
+    this.ctx.lineTo(closeX + closeSize - xPadding, closeY + closeSize - xPadding);
+    this.ctx.moveTo(closeX + closeSize - xPadding, closeY + xPadding);
+    this.ctx.lineTo(closeX + xPadding, closeY + closeSize - xPadding);
+    this.ctx.stroke();
+
     // 标题
     this.ctx.fillStyle = '#333';
     const titleSize = Math.min(24, popupHeight / 8);
@@ -1040,18 +1073,13 @@ class Game {
       'A 键 : 攻击',
       '',
       '目标：穿越关卡，救出公主！',
-      '提示：拾取大宝剑可以增强攻击',
+      '提示：拾取大宝剑可以增强攻击！',
     ];
 
     const lineHeight = Math.min(28, popupHeight / 8);
     lines.forEach((line, i) => {
       this.ctx.fillText(line, this.width / 2, popupY + 70 + i * lineHeight);
     });
-
-    // 关闭提示
-    this.ctx.fillStyle = '#999';
-    this.ctx.font = `${Math.min(14, contentSize)}px Arial`;
-    this.ctx.fillText('点击任意位置关闭', this.width / 2, popupY + popupHeight - 20);
 
     this.ctx.textAlign = 'left';
   }
@@ -1184,8 +1212,8 @@ class Game {
 
     // 绘制暂停图标（两条竖线）
     this.ctx.fillStyle = '#FFFFFF';
-    this.ctx.fillRect(22, 25, 4, 14); // 左竖线
-    this.ctx.fillRect(31, 25, 4, 14); // 右竖线
+    this.ctx.fillRect(22, 26, 4, 12); // 左竖线
+    this.ctx.fillRect(31, 26, 4, 12); // 右竖线
 
     // 虚拟按钮（增大尺寸和字体）
     this.touchButtons.forEach((btn) => {
