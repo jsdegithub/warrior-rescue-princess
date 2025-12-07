@@ -1187,8 +1187,8 @@ class Game {
     // 生命值（右移给暂停按钮腾出空间）
     for (let i = 0; i < 3; i++) {
       this.ctx.fillStyle = i < this.health ? '#f5576c' : 'rgba(245, 87, 108, 0.3)';
-      this.ctx.font = '30px Arial';
-      this.ctx.fillText('❤', 60 + i * 40, 42);
+      this.ctx.font = '28px Arial';
+      this.ctx.fillText('❤', 70 + i * 35, 40);
     }
 
     // 得分显示
