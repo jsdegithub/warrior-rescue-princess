@@ -776,10 +776,12 @@ class Game {
   }
 
   checkGameOver() {
-    if (this.warrior.health <= 0) {
+    if (this.warrior.health <= 0 && this.gameState !== 'gameover') {
       this.gameState = 'gameover';
       this.soundManager.stopRunning();
       this.soundManager.defeat(); // 播放主角死亡音效
+      // 切换为游戏失败背景音乐（只播放一次）
+      this.soundManager.playBackgroundMusic('audio/love_cy.mp3', false);
     }
   }
 
