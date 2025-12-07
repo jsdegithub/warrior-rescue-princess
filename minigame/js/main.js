@@ -43,7 +43,8 @@ class Game {
 
     // 得分系统
     this.score = 0;
-    this.scoreStarted = false;
+    this.maxReachedX = 0; // 追踪最远到达的X坐标
+    this.bonusScore = 0; // 额外奖励分数（击杀、道具等）
 
     // 生命值
     this.health = 3;
@@ -350,7 +351,8 @@ class Game {
     this.gameOverTriggered = false;
 
     this.score = 0;
-    this.scoreStarted = true;
+    this.maxReachedX = 0;
+    this.bonusScore = 0;
   }
 
   createPlatforms() {
@@ -591,6 +593,8 @@ class Game {
           this.warrior.equipSword();
           // 拾取音效（使用挥剑音效代替）
           this.soundManager.slashSword();
+          // 拾取大宝剑加分
+          this.addBonusScore(1000);
         }
       }
     });
@@ -619,9 +623,12 @@ class Game {
   // 更新游戏逻辑
   update(deltaTime) {
     if (this.gameState === 'playing') {
-      // 更新得分（每毫秒+1分）
-      if (this.scoreStarted && !this.victoryTriggered) {
-        this.score += deltaTime;
+      // 更新进度得分（基于勇士X坐标）
+      if (this.warrior && !this.victoryTriggered) {
+        if (this.warrior.x > this.maxReachedX) {
+          this.maxReachedX = this.warrior.x;
+        }
+        this.score = Math.max(0, this.maxReachedX + this.bonusScore);
       }
 
       // 构建输入（胜利时禁止移动）
@@ -693,7 +700,7 @@ class Game {
             } else if (!this.warrior.isInvulnerable && !this.warrior.isAttacking) {
               this.warrior.takeDamage();
               this.health = this.warrior.health;
-              this.deductScore(10000); // 受伤扣10000分
+              this.deductScore(5000); // 受伤扣5000分
             }
           }
         }
@@ -732,6 +739,11 @@ class Game {
     if (collision && !this.victoryTriggered) {
       this.victoryTriggered = true;
 
+      // 通关奖励分
+      this.addBonusScore(5000);
+      // 更新最终得分
+      this.score = Math.max(0, this.maxReachedX + this.bonusScore);
+
       // 清除输入
       this.input.left = false;
       this.input.right = false;
@@ -755,26 +767,31 @@ class Game {
     let bonus = 0;
     switch (enemy.type) {
       case 'normal':
-        bonus = 5000; // 普通地面怪
+        bonus = 500; // 普通地面怪
         break;
       case 'fly':
-        bonus = 10000; // 普通飞行怪
+        bonus = 1000; // 普通飞行怪
         break;
       case 'shooter':
-        bonus = 20000; // 地面射击怪
+        bonus = 2000; // 地面射击怪
         break;
       case 'fly_shooter':
-        bonus = 30000; // 飞行射击怪
+        bonus = 3000; // 飞行射击怪
         break;
       default:
-        bonus = 5000;
+        bonus = 500;
     }
-    this.score += bonus;
+    this.bonusScore += bonus;
   }
 
-  // 扣分（保证不小于0）
+  // 扣分（从奖励分中扣除）
   deductScore(amount) {
-    this.score = Math.max(0, this.score - amount);
+    this.bonusScore -= amount;
+  }
+
+  // 添加奖励分
+  addBonusScore(amount) {
+    this.bonusScore += amount;
   }
 
   checkGameOver() {
