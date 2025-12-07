@@ -6,16 +6,48 @@ class SoundManager {
     this.enabled = true;
     this.bgMusic = null;
     this.bgMusicVolume = 0.4;
-    this.audioContext = null;
-    this.initAudioContext();
+    this.sfxVolume = 0.6;
+    
+    // 音效文件路径
+    this.soundPaths = {
+      jump: 'audio/jump.mp3',
+      attack: 'audio/normal_attack.mp3',
+      slashSword: 'audio/slash_sword.mp3',
+      hurt: 'audio/harmed.mp3',
+      dead: 'audio/dead.mp3',
+      victory: 'audio/victory.mp3',
+      running: 'audio/running.mp3',
+    };
+    
+    // 走路音效（需要循环播放）
+    this.runningSound = null;
+    this.isRunning = false;
   }
 
-  initAudioContext() {
+  // 播放音效文件
+  playSoundFile(soundKey, volume = this.sfxVolume) {
+    if (!this.enabled) return;
+
+    const path = this.soundPaths[soundKey];
+    if (!path) return;
+
     try {
-      // 微信小游戏的 WebAudio API
-      this.audioContext = wx.createWebAudioContext();
+      const audio = wx.createInnerAudioContext();
+      audio.src = path;
+      audio.volume = volume;
+      audio.play();
+      
+      // 播放完成后销毁
+      audio.onEnded(() => {
+        audio.destroy();
+      });
+      
+      audio.onError((err) => {
+        console.log(`音效 ${soundKey} 播放出错:`, err);
+        audio.destroy();
+      });
     } catch (e) {
-      console.log('WebAudio API not supported:', e);
+      console.log(`音效 ${soundKey} 播放失败:`, e);
     }
   }
 
@@ -73,51 +105,60 @@ class SoundManager {
     }
   }
 
-  // 播放音效
-  playSound(frequency, duration, type = 'sine') {
-    if (!this.enabled || !this.audioContext) return;
+  // 跳跃音效
+  jump() {
+    this.playSoundFile('jump', 0.5);
+  }
+
+  // 普通攻击音效
+  attack() {
+    this.playSoundFile('attack', 0.5);
+  }
+
+  // 挥剑攻击音效（有大宝剑时）
+  slashSword() {
+    this.playSoundFile('slashSword', 0.6);
+  }
+
+  // 受伤音效
+  hurt() {
+    this.playSoundFile('hurt', 0.6);
+  }
+
+  // 死亡音效
+  defeat() {
+    this.playSoundFile('dead', 0.7);
+  }
+
+  // 胜利音效
+  victory() {
+    this.playSoundFile('victory', 0.8);
+  }
+
+  // 开始走路音效（循环）
+  startRunning() {
+    if (!this.enabled || this.isRunning) return;
 
     try {
-      const oscillator = this.audioContext.createOscillator();
-      const gainNode = this.audioContext.createGain();
-
-      oscillator.connect(gainNode);
-      gainNode.connect(this.audioContext.destination);
-
-      oscillator.frequency.value = frequency;
-      oscillator.type = type;
-
-      gainNode.gain.setValueAtTime(0.3, this.audioContext.currentTime);
-      gainNode.gain.exponentialRampToValueAtTime(0.01, this.audioContext.currentTime + duration);
-
-      oscillator.start(this.audioContext.currentTime);
-      oscillator.stop(this.audioContext.currentTime + duration);
+      this.runningSound = wx.createInnerAudioContext();
+      this.runningSound.src = this.soundPaths.running;
+      this.runningSound.loop = true;
+      this.runningSound.volume = 0.3;
+      this.runningSound.play();
+      this.isRunning = true;
     } catch (e) {
-      // 忽略音效播放错误
+      console.log('走路音效播放失败:', e);
     }
   }
 
-  jump() {
-    this.playSound(400, 0.1, 'square');
-  }
-
-  attack() {
-    this.playSound(600, 0.15, 'sawtooth');
-  }
-
-  hurt() {
-    this.playSound(200, 0.2, 'sawtooth');
-  }
-
-  defeat() {
-    this.playSound(150, 0.3, 'triangle');
-  }
-
-  victory() {
-    if (!this.enabled || !this.audioContext) return;
-    setTimeout(() => this.playSound(523, 0.2), 0);
-    setTimeout(() => this.playSound(659, 0.2), 200);
-    setTimeout(() => this.playSound(784, 0.4), 400);
+  // 停止走路音效
+  stopRunning() {
+    if (this.runningSound) {
+      this.runningSound.stop();
+      this.runningSound.destroy();
+      this.runningSound = null;
+    }
+    this.isRunning = false;
   }
 }
 

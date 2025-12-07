@@ -77,6 +77,9 @@ class Game {
     // 初始化触摸控制
     this.initTouchControls();
 
+    // 播放主菜单背景音乐
+    this.soundManager.playBackgroundMusic('audio/opening_music.mp3');
+
     // 开始游戏循环
     this.startGameLoop();
   }
@@ -721,6 +724,9 @@ class Game {
       this.input.jump = false;
       this.input.attack = false;
 
+      // 停止走路音效
+      this.soundManager.stopRunning();
+
       this.createHeartParticles();
       this.soundManager.victory();
 
@@ -733,6 +739,7 @@ class Game {
   checkGameOver() {
     if (this.warrior.health <= 0) {
       this.gameState = 'gameover';
+      this.soundManager.stopRunning();
     }
   }
 
@@ -759,6 +766,7 @@ class Game {
     if (this.gameState === 'playing') {
       this.gameState = 'paused';
       this.soundManager.pauseBackgroundMusic();
+      this.soundManager.stopRunning();
     }
   }
 
@@ -780,7 +788,8 @@ class Game {
 
   // 返回菜单
   backToMenu() {
-    this.soundManager.stopBackgroundMusic();
+    this.soundManager.stopRunning();
+    this.soundManager.playBackgroundMusic('audio/opening_music.mp3');
     this.gameState = 'menu';
   }
 

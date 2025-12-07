@@ -137,6 +137,13 @@ export class Warrior {
         this.direction = 1;
       }
 
+      // 走路音效控制
+      if (this.vx !== 0 && this.onGround) {
+        this.soundManager.startRunning();
+      } else {
+        this.soundManager.stopRunning();
+      }
+
       if (input.jump && this.onGround) {
         this.vy = this.jumpPower;
         this.onGround = false;
@@ -146,7 +153,12 @@ export class Warrior {
       if (input.attack && !this.isAttacking) {
         this.isAttacking = true;
         this.attackTime = 300;
-        this.soundManager.attack();
+        // 根据是否有大宝剑播放不同音效
+        if (this.hasSword) {
+          this.soundManager.slashSword();
+        } else {
+          this.soundManager.attack();
+        }
       }
     }
 
