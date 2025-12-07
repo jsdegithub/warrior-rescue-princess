@@ -1058,11 +1058,12 @@ class Game {
     this.ctx.fillStyle = 'rgba(255, 255, 255, 0.8)';
 
     // 云朵基础位置和速度倍数（不同云朵移动速度略有不同）
+    // y 坐标需要确保云朵不超出屏幕上边界（云朵最高点约 y - h*0.6）
     const cloudsBase = [
-      {baseX: 0.1, y: this.height * 0.15, w: 80, h: 40, speed: 1.0},
-      {baseX: 0.35, y: this.height * 0.08, w: 100, h: 50, speed: 0.7},
-      {baseX: 0.6, y: this.height * 0.2, w: 90, h: 45, speed: 1.2},
-      {baseX: 0.85, y: this.height * 0.12, w: 70, h: 35, speed: 0.9},
+      {baseX: 0.1, y: Math.max(50, this.height * 0.2), w: 80, h: 40, speed: 1.0},
+      {baseX: 0.35, y: Math.max(60, this.height * 0.18), w: 100, h: 50, speed: 0.7},
+      {baseX: 0.6, y: Math.max(55, this.height * 0.25), w: 90, h: 45, speed: 1.2},
+      {baseX: 0.85, y: Math.max(45, this.height * 0.2), w: 70, h: 35, speed: 0.9},
       {baseX: 0.2, y: this.height * 0.85, w: 60, h: 30, speed: 0.8},
       {baseX: 0.75, y: this.height * 0.8, w: 75, h: 38, speed: 1.1},
     ];
