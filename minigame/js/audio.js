@@ -55,6 +55,9 @@ class SoundManager {
   playBackgroundMusic(musicPath) {
     if (!this.enabled) return;
 
+    // 先停止之前的背景音乐
+    this.stopBackgroundMusic();
+
     try {
       this.bgMusic = wx.createInnerAudioContext();
       this.bgMusic.src = musicPath;
