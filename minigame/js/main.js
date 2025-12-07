@@ -93,22 +93,22 @@ class Game {
       {id: 'left', x: padding, y: bottomY, width: btnSize, height: btnSize, label: '←'},
       {id: 'right', x: padding + btnSize + 20, y: bottomY, width: btnSize, height: btnSize, label: '→'},
       {
-        id: 'jump',
-        x: this.width - padding - btnSize * 2 - 20,
-        y: bottomY,
-        width: btnSize,
-        height: btnSize,
-        label: 'B',
-        color: 'rgba(76, 175, 80, 0.5)',
-      },
-      {
         id: 'attack',
-        x: this.width - padding - btnSize,
+        x: this.width - padding - btnSize * 2 - 20,
         y: bottomY,
         width: btnSize,
         height: btnSize,
         label: 'A',
         color: 'rgba(244, 67, 54, 0.5)',
+      },
+      {
+        id: 'jump',
+        x: this.width - padding - btnSize,
+        y: bottomY,
+        width: btnSize,
+        height: btnSize,
+        label: 'B',
+        color: 'rgba(76, 175, 80, 0.5)',
       },
     ];
 
