@@ -191,6 +191,13 @@ class Game {
           this.menuButtons.sound.color = this.soundManager.enabled
             ? 'rgba(80, 200, 120, 0.8)'
             : 'rgba(150, 150, 150, 0.8)';
+
+          // 同步控制背景音乐
+          if (this.soundManager.enabled) {
+            this.soundManager.resumeBackgroundMusic();
+          } else {
+            this.soundManager.pauseBackgroundMusic();
+          }
           return;
         }
       }
