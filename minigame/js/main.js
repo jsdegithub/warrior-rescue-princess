@@ -48,6 +48,7 @@ class Game {
     // 生命值
     this.health = 3;
     this.victoryTriggered = false;
+    this.gameOverTriggered = false;
 
     // 输入状态
     this.input = {
@@ -346,6 +347,7 @@ class Game {
     this.cameraX = 0;
     this.health = 3;
     this.victoryTriggered = false;
+    this.gameOverTriggered = false;
 
     this.score = 0;
     this.scoreStarted = true;
@@ -776,7 +778,8 @@ class Game {
   }
 
   checkGameOver() {
-    if (this.warrior.health <= 0 && this.gameState !== 'gameover') {
+    if (this.warrior.health <= 0 && !this.gameOverTriggered) {
+      this.gameOverTriggered = true;
       this.gameState = 'gameover';
       this.soundManager.stopRunning();
       this.soundManager.defeat(); // 播放主角死亡音效
@@ -823,8 +826,9 @@ class Game {
   // 重新开始
   restartGame() {
     this.soundManager.stopBackgroundMusic();
-    this.gameState = 'playing';
+    this.soundManager.stopRunning();
     this.initLevel();
+    this.gameState = 'playing'; // 在 initLevel 之后设置状态
     this.soundManager.playBackgroundMusic('audio/bg.mp3');
   }
 

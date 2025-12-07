@@ -53,20 +53,23 @@ class SoundManager {
 
   // 播放背景音乐
   playBackgroundMusic(musicPath, loop = true) {
-    if (!this.enabled) return;
-
     // 先停止之前的背景音乐
     this.stopBackgroundMusic();
+
+    if (!this.enabled) return;
 
     try {
       this.bgMusic = wx.createInnerAudioContext();
       this.bgMusic.src = musicPath;
       this.bgMusic.loop = loop;
       this.bgMusic.volume = this.bgMusicVolume;
-      this.bgMusic.autoplay = true;
+
+      this.bgMusic.onCanplay(() => {
+        this.bgMusic.play();
+      });
 
       this.bgMusic.onPlay(() => {
-        console.log('背景音乐开始播放');
+        console.log('背景音乐开始播放:', musicPath);
       });
 
       this.bgMusic.onError((err) => {
