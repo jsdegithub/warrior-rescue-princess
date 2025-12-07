@@ -1118,21 +1118,35 @@ class Game {
       this.ctx.fillStyle = '#FFFFFF';
 
       if (btn.id === 'left') {
-        // 左三角形 ◀
+        // 左三角形 ◀（圆角）
+        this.ctx.save();
+        this.ctx.lineJoin = 'round';
+        this.ctx.lineCap = 'round';
+        this.ctx.lineWidth = 6;
+        this.ctx.strokeStyle = '#FFFFFF';
         this.ctx.beginPath();
-        this.ctx.moveTo(centerX + 12, centerY - 15);
-        this.ctx.lineTo(centerX - 12, centerY);
-        this.ctx.lineTo(centerX + 12, centerY + 15);
+        this.ctx.moveTo(centerX + 10, centerY - 12);
+        this.ctx.lineTo(centerX - 8, centerY);
+        this.ctx.lineTo(centerX + 10, centerY + 12);
         this.ctx.closePath();
         this.ctx.fill();
+        this.ctx.stroke();
+        this.ctx.restore();
       } else if (btn.id === 'right') {
-        // 右三角形 ▶
+        // 右三角形 ▶（圆角）
+        this.ctx.save();
+        this.ctx.lineJoin = 'round';
+        this.ctx.lineCap = 'round';
+        this.ctx.lineWidth = 6;
+        this.ctx.strokeStyle = '#FFFFFF';
         this.ctx.beginPath();
-        this.ctx.moveTo(centerX - 12, centerY - 15);
-        this.ctx.lineTo(centerX + 12, centerY);
-        this.ctx.lineTo(centerX - 12, centerY + 15);
+        this.ctx.moveTo(centerX - 10, centerY - 12);
+        this.ctx.lineTo(centerX + 8, centerY);
+        this.ctx.lineTo(centerX - 10, centerY + 12);
         this.ctx.closePath();
         this.ctx.fill();
+        this.ctx.stroke();
+        this.ctx.restore();
       } else {
         // 其他按钮显示文字
         this.ctx.font = 'bold 26px Arial';
