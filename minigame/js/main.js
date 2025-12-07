@@ -39,7 +39,7 @@ class Game {
 
     // 相机和关卡
     this.cameraX = 0;
-    this.levelWidth = 12000;
+    this.levelWidth = 24000;
 
     // 得分系统
     this.score = 0;
@@ -465,83 +465,436 @@ class Game {
 
     const patrolRange = 200;
 
-    // 第一区域
-    const e1_1 = area1Width * 0.25;
-    const e1_2 = area1Width * 0.5;
-    const e1_3 = area1Width * 0.65;
-    this.enemies.push(new Enemy(e1_1, this.height - 100, 'patrol', e1_1 - patrolRange, e1_1 + patrolRange));
-    this.enemies.push(new Enemy(e1_2, this.height - 100, 'patrol', e1_2 - patrolRange, e1_2 + patrolRange));
-    this.enemies.push(new Enemy(e1_3, this.height - 280, 'fly', e1_3 - patrolRange * 2, e1_3 + patrolRange * 2));
-
-    // 第二区域
-    const e2_1 = area2Start + area2Width * 0.05;
-    const e2_2 = area2Start + area2Width * 0.3;
-    const e2_3 = area2Start + area2Width * 0.55;
-    const e2_4 = area2Start + area2Width * 0.2;
-    const e2_5 = area2Start + area2Width * 0.7;
-    const e2_6 = area2Start + area2Width * 0.85;
-    const e2_7 = area2Start + area2Width * 0.45;
-    this.enemies.push(new Enemy(e2_1, this.height - 100, 'patrol', e2_1 - patrolRange, e2_1 + patrolRange));
-    this.enemies.push(new Enemy(e2_2, this.height - 100, 'patrol', e2_2 - patrolRange, e2_2 + patrolRange));
-    this.enemies.push(new Enemy(e2_3, this.height - 100, 'patrol', e2_3 - patrolRange, e2_3 + patrolRange));
-    this.enemies.push(new Enemy(e2_4, this.height - 350, 'fly', e2_4 - patrolRange * 2.5, e2_4 + patrolRange * 2.5));
-    this.enemies.push(new Enemy(e2_5, this.height - 320, 'fly', e2_5 - patrolRange * 2, e2_5 + patrolRange * 2));
+    // ========== 第一区域：入门区（6只怪：5巡逻 + 1飞行）==========
+    const e1_positions = [0.12, 0.25, 0.38, 0.52, 0.68, 0.82];
     this.enemies.push(
-      new Enemy(e2_6, this.height - 100, 'shooter', e2_6 - patrolRange * 0.5, e2_6 + patrolRange * 0.5)
+      new Enemy(
+        area1Width * e1_positions[0],
+        this.height - 100,
+        'patrol',
+        area1Width * e1_positions[0] - patrolRange,
+        area1Width * e1_positions[0] + patrolRange
+      )
     );
     this.enemies.push(
-      new Enemy(e2_7, this.height - 280, 'fly_shooter', e2_7 - patrolRange * 2, e2_7 + patrolRange * 2)
-    );
-
-    // 第三区域
-    const e3_1 = area3Start + area3Width * 0.1;
-    const e3_2 = area3Start + area3Width * 0.4;
-    const e3_3 = area3Start + area3Width * 0.25;
-    const e3_4 = area3Start + area3Width * 0.6;
-    const e3_5 = area3Start + area3Width * 0.75;
-    const e3_6 = area3Start + area3Width * 0.5;
-    this.enemies.push(new Enemy(e3_1, this.height - 100, 'patrol', e3_1 - patrolRange, e3_1 + patrolRange));
-    this.enemies.push(new Enemy(e3_2, this.height - 100, 'patrol', e3_2 - patrolRange, e3_2 + patrolRange));
-    this.enemies.push(new Enemy(e3_3, this.height - 400, 'fly', e3_3 - patrolRange * 2, e3_3 + patrolRange * 2));
-    this.enemies.push(new Enemy(e3_4, this.height - 350, 'fly', e3_4 - patrolRange * 2, e3_4 + patrolRange * 2));
-    this.enemies.push(
-      new Enemy(e3_5, this.height - 100, 'shooter', e3_5 - patrolRange * 0.5, e3_5 + patrolRange * 0.5)
+      new Enemy(
+        area1Width * e1_positions[1],
+        this.height - 100,
+        'patrol',
+        area1Width * e1_positions[1] - patrolRange,
+        area1Width * e1_positions[1] + patrolRange
+      )
     );
     this.enemies.push(
-      new Enemy(e3_6, this.height - 320, 'fly_shooter', e3_6 - patrolRange * 2.5, e3_6 + patrolRange * 2.5)
-    );
-
-    // 第四区域
-    const e4_1 = area4Start + area4Width * 0.1;
-    const e4_2 = area4Start + area4Width * 0.35;
-    const e4_3 = area4Start + area4Width * 0.6;
-    const e4_4 = area4Start + area4Width * 0.25;
-    const e4_5 = area4Start + area4Width * 0.7;
-    const e4_6 = area4Start + area4Width * 0.5;
-    const e4_7 = area4Start + area4Width * 0.85;
-    const e4_8 = area4Start + area4Width * 0.4;
-    const e4_9 = area4Start + area4Width * 0.75;
-    this.enemies.push(new Enemy(e4_1, this.height - 100, 'patrol', e4_1 - patrolRange, e4_1 + patrolRange));
-    this.enemies.push(new Enemy(e4_2, this.height - 100, 'patrol', e4_2 - patrolRange, e4_2 + patrolRange));
-    this.enemies.push(new Enemy(e4_3, this.height - 100, 'patrol', e4_3 - patrolRange, e4_3 + patrolRange));
-    this.enemies.push(new Enemy(e4_4, this.height - 350, 'fly', e4_4 - patrolRange * 2.5, e4_4 + patrolRange * 2.5));
-    this.enemies.push(new Enemy(e4_5, this.height - 380, 'fly', e4_5 - patrolRange * 2.5, e4_5 + patrolRange * 2.5));
-    this.enemies.push(
-      new Enemy(e4_6, this.height - 100, 'shooter', e4_6 - patrolRange * 0.5, e4_6 + patrolRange * 0.5)
+      new Enemy(
+        area1Width * e1_positions[2],
+        this.height - 100,
+        'patrol',
+        area1Width * e1_positions[2] - patrolRange,
+        area1Width * e1_positions[2] + patrolRange
+      )
     );
     this.enemies.push(
-      new Enemy(e4_7, this.height - 100, 'shooter', e4_7 - patrolRange * 0.5, e4_7 + patrolRange * 0.5)
+      new Enemy(
+        area1Width * e1_positions[3],
+        this.height - 280,
+        'fly',
+        area1Width * e1_positions[3] - patrolRange * 2,
+        area1Width * e1_positions[3] + patrolRange * 2
+      )
     );
     this.enemies.push(
-      new Enemy(e4_8, this.height - 300, 'fly_shooter', e4_8 - patrolRange * 2, e4_8 + patrolRange * 2)
+      new Enemy(
+        area1Width * e1_positions[4],
+        this.height - 100,
+        'patrol',
+        area1Width * e1_positions[4] - patrolRange,
+        area1Width * e1_positions[4] + patrolRange
+      )
     );
     this.enemies.push(
-      new Enemy(e4_9, this.height - 350, 'fly_shooter', e4_9 - patrolRange * 2.5, e4_9 + patrolRange * 2.5)
+      new Enemy(
+        area1Width * e1_positions[5],
+        this.height - 100,
+        'patrol',
+        area1Width * e1_positions[5] - patrolRange,
+        area1Width * e1_positions[5] + patrolRange
+      )
     );
 
-    // 终点守卫
-    const guardPos = L - L * 0.0875;
-    this.enemies.push(new Enemy(guardPos, this.height - 100, 'patrol', guardPos - patrolRange, guardPos + patrolRange));
+    // ========== 第二区域：进阶区（10只怪：4巡逻 + 3飞行 + 2射手 + 1飞行射手）==========
+    // 巡逻怪
+    this.enemies.push(
+      new Enemy(
+        area2Start + area2Width * 0.05,
+        this.height - 100,
+        'patrol',
+        area2Start + area2Width * 0.05 - patrolRange,
+        area2Start + area2Width * 0.05 + patrolRange
+      )
+    );
+    this.enemies.push(
+      new Enemy(
+        area2Start + area2Width * 0.22,
+        this.height - 100,
+        'patrol',
+        area2Start + area2Width * 0.22 - patrolRange,
+        area2Start + area2Width * 0.22 + patrolRange
+      )
+    );
+    this.enemies.push(
+      new Enemy(
+        area2Start + area2Width * 0.48,
+        this.height - 100,
+        'patrol',
+        area2Start + area2Width * 0.48 - patrolRange,
+        area2Start + area2Width * 0.48 + patrolRange
+      )
+    );
+    this.enemies.push(
+      new Enemy(
+        area2Start + area2Width * 0.72,
+        this.height - 100,
+        'patrol',
+        area2Start + area2Width * 0.72 - patrolRange,
+        area2Start + area2Width * 0.72 + patrolRange
+      )
+    );
+    // 飞行怪
+    this.enemies.push(
+      new Enemy(
+        area2Start + area2Width * 0.15,
+        this.height - 350,
+        'fly',
+        area2Start + area2Width * 0.15 - patrolRange * 2.5,
+        area2Start + area2Width * 0.15 + patrolRange * 2.5
+      )
+    );
+    this.enemies.push(
+      new Enemy(
+        area2Start + area2Width * 0.38,
+        this.height - 320,
+        'fly',
+        area2Start + area2Width * 0.38 - patrolRange * 2,
+        area2Start + area2Width * 0.38 + patrolRange * 2
+      )
+    );
+    this.enemies.push(
+      new Enemy(
+        area2Start + area2Width * 0.62,
+        this.height - 280,
+        'fly',
+        area2Start + area2Width * 0.62 - patrolRange * 2,
+        area2Start + area2Width * 0.62 + patrolRange * 2
+      )
+    );
+    // 射手
+    this.enemies.push(
+      new Enemy(
+        area2Start + area2Width * 0.55,
+        this.height - 100,
+        'shooter',
+        area2Start + area2Width * 0.55 - patrolRange * 0.5,
+        area2Start + area2Width * 0.55 + patrolRange * 0.5
+      )
+    );
+    this.enemies.push(
+      new Enemy(
+        area2Start + area2Width * 0.88,
+        this.height - 100,
+        'shooter',
+        area2Start + area2Width * 0.88 - patrolRange * 0.5,
+        area2Start + area2Width * 0.88 + patrolRange * 0.5
+      )
+    );
+    // 飞行射手
+    this.enemies.push(
+      new Enemy(
+        area2Start + area2Width * 0.78,
+        this.height - 300,
+        'fly_shooter',
+        area2Start + area2Width * 0.78 - patrolRange * 2,
+        area2Start + area2Width * 0.78 + patrolRange * 2
+      )
+    );
+
+    // ========== 第三区域：挑战区（12只怪：4巡逻 + 3飞行 + 3射手 + 2飞行射手）==========
+    // 巡逻怪
+    this.enemies.push(
+      new Enemy(
+        area3Start + area3Width * 0.08,
+        this.height - 100,
+        'patrol',
+        area3Start + area3Width * 0.08 - patrolRange,
+        area3Start + area3Width * 0.08 + patrolRange
+      )
+    );
+    this.enemies.push(
+      new Enemy(
+        area3Start + area3Width * 0.28,
+        this.height - 100,
+        'patrol',
+        area3Start + area3Width * 0.28 - patrolRange,
+        area3Start + area3Width * 0.28 + patrolRange
+      )
+    );
+    this.enemies.push(
+      new Enemy(
+        area3Start + area3Width * 0.52,
+        this.height - 100,
+        'patrol',
+        area3Start + area3Width * 0.52 - patrolRange,
+        area3Start + area3Width * 0.52 + patrolRange
+      )
+    );
+    this.enemies.push(
+      new Enemy(
+        area3Start + area3Width * 0.75,
+        this.height - 100,
+        'patrol',
+        area3Start + area3Width * 0.75 - patrolRange,
+        area3Start + area3Width * 0.75 + patrolRange
+      )
+    );
+    // 飞行怪
+    this.enemies.push(
+      new Enemy(
+        area3Start + area3Width * 0.18,
+        this.height - 380,
+        'fly',
+        area3Start + area3Width * 0.18 - patrolRange * 2,
+        area3Start + area3Width * 0.18 + patrolRange * 2
+      )
+    );
+    this.enemies.push(
+      new Enemy(
+        area3Start + area3Width * 0.42,
+        this.height - 350,
+        'fly',
+        area3Start + area3Width * 0.42 - patrolRange * 2,
+        area3Start + area3Width * 0.42 + patrolRange * 2
+      )
+    );
+    this.enemies.push(
+      new Enemy(
+        area3Start + area3Width * 0.68,
+        this.height - 320,
+        'fly',
+        area3Start + area3Width * 0.68 - patrolRange * 2,
+        area3Start + area3Width * 0.68 + patrolRange * 2
+      )
+    );
+    // 射手
+    this.enemies.push(
+      new Enemy(
+        area3Start + area3Width * 0.35,
+        this.height - 100,
+        'shooter',
+        area3Start + area3Width * 0.35 - patrolRange * 0.5,
+        area3Start + area3Width * 0.35 + patrolRange * 0.5
+      )
+    );
+    this.enemies.push(
+      new Enemy(
+        area3Start + area3Width * 0.62,
+        this.height - 100,
+        'shooter',
+        area3Start + area3Width * 0.62 - patrolRange * 0.5,
+        area3Start + area3Width * 0.62 + patrolRange * 0.5
+      )
+    );
+    this.enemies.push(
+      new Enemy(
+        area3Start + area3Width * 0.85,
+        this.height - 100,
+        'shooter',
+        area3Start + area3Width * 0.85 - patrolRange * 0.5,
+        area3Start + area3Width * 0.85 + patrolRange * 0.5
+      )
+    );
+    // 飞行射手
+    this.enemies.push(
+      new Enemy(
+        area3Start + area3Width * 0.25,
+        this.height - 300,
+        'fly_shooter',
+        area3Start + area3Width * 0.25 - patrolRange * 2.5,
+        area3Start + area3Width * 0.25 + patrolRange * 2.5
+      )
+    );
+    this.enemies.push(
+      new Enemy(
+        area3Start + area3Width * 0.58,
+        this.height - 340,
+        'fly_shooter',
+        area3Start + area3Width * 0.58 - patrolRange * 2,
+        area3Start + area3Width * 0.58 + patrolRange * 2
+      )
+    );
+
+    // ========== 第四区域：地狱区（16只怪：5巡逻 + 4飞行 + 4射手 + 3飞行射手）==========
+    // 巡逻怪
+    this.enemies.push(
+      new Enemy(
+        area4Start + area4Width * 0.06,
+        this.height - 100,
+        'patrol',
+        area4Start + area4Width * 0.06 - patrolRange,
+        area4Start + area4Width * 0.06 + patrolRange
+      )
+    );
+    this.enemies.push(
+      new Enemy(
+        area4Start + area4Width * 0.2,
+        this.height - 100,
+        'patrol',
+        area4Start + area4Width * 0.2 - patrolRange,
+        area4Start + area4Width * 0.2 + patrolRange
+      )
+    );
+    this.enemies.push(
+      new Enemy(
+        area4Start + area4Width * 0.38,
+        this.height - 100,
+        'patrol',
+        area4Start + area4Width * 0.38 - patrolRange,
+        area4Start + area4Width * 0.38 + patrolRange
+      )
+    );
+    this.enemies.push(
+      new Enemy(
+        area4Start + area4Width * 0.55,
+        this.height - 100,
+        'patrol',
+        area4Start + area4Width * 0.55 - patrolRange,
+        area4Start + area4Width * 0.55 + patrolRange
+      )
+    );
+    this.enemies.push(
+      new Enemy(
+        area4Start + area4Width * 0.72,
+        this.height - 100,
+        'patrol',
+        area4Start + area4Width * 0.72 - patrolRange,
+        area4Start + area4Width * 0.72 + patrolRange
+      )
+    );
+    // 飞行怪
+    this.enemies.push(
+      new Enemy(
+        area4Start + area4Width * 0.12,
+        this.height - 380,
+        'fly',
+        area4Start + area4Width * 0.12 - patrolRange * 2.5,
+        area4Start + area4Width * 0.12 + patrolRange * 2.5
+      )
+    );
+    this.enemies.push(
+      new Enemy(
+        area4Start + area4Width * 0.32,
+        this.height - 350,
+        'fly',
+        area4Start + area4Width * 0.32 - patrolRange * 2,
+        area4Start + area4Width * 0.32 + patrolRange * 2
+      )
+    );
+    this.enemies.push(
+      new Enemy(
+        area4Start + area4Width * 0.52,
+        this.height - 320,
+        'fly',
+        area4Start + area4Width * 0.52 - patrolRange * 2,
+        area4Start + area4Width * 0.52 + patrolRange * 2
+      )
+    );
+    this.enemies.push(
+      new Enemy(
+        area4Start + area4Width * 0.75,
+        this.height - 360,
+        'fly',
+        area4Start + area4Width * 0.75 - patrolRange * 2.5,
+        area4Start + area4Width * 0.75 + patrolRange * 2.5
+      )
+    );
+    // 射手
+    this.enemies.push(
+      new Enemy(
+        area4Start + area4Width * 0.25,
+        this.height - 100,
+        'shooter',
+        area4Start + area4Width * 0.25 - patrolRange * 0.5,
+        area4Start + area4Width * 0.25 + patrolRange * 0.5
+      )
+    );
+    this.enemies.push(
+      new Enemy(
+        area4Start + area4Width * 0.45,
+        this.height - 100,
+        'shooter',
+        area4Start + area4Width * 0.45 - patrolRange * 0.5,
+        area4Start + area4Width * 0.45 + patrolRange * 0.5
+      )
+    );
+    this.enemies.push(
+      new Enemy(
+        area4Start + area4Width * 0.65,
+        this.height - 100,
+        'shooter',
+        area4Start + area4Width * 0.65 - patrolRange * 0.5,
+        area4Start + area4Width * 0.65 + patrolRange * 0.5
+      )
+    );
+    this.enemies.push(
+      new Enemy(
+        area4Start + area4Width * 0.82,
+        this.height - 100,
+        'shooter',
+        area4Start + area4Width * 0.82 - patrolRange * 0.5,
+        area4Start + area4Width * 0.82 + patrolRange * 0.5
+      )
+    );
+    // 飞行射手
+    this.enemies.push(
+      new Enemy(
+        area4Start + area4Width * 0.18,
+        this.height - 300,
+        'fly_shooter',
+        area4Start + area4Width * 0.18 - patrolRange * 2,
+        area4Start + area4Width * 0.18 + patrolRange * 2
+      )
+    );
+    this.enemies.push(
+      new Enemy(
+        area4Start + area4Width * 0.42,
+        this.height - 340,
+        'fly_shooter',
+        area4Start + area4Width * 0.42 - patrolRange * 2.5,
+        area4Start + area4Width * 0.42 + patrolRange * 2.5
+      )
+    );
+    this.enemies.push(
+      new Enemy(
+        area4Start + area4Width * 0.68,
+        this.height - 320,
+        'fly_shooter',
+        area4Start + area4Width * 0.68 - patrolRange * 2,
+        area4Start + area4Width * 0.68 + patrolRange * 2
+      )
+    );
+
+    // 终点守卫（2只巡逻 + 1射手）
+    const guardPos1 = L - L * 0.075;
+    const guardPos2 = L - L * 0.055;
+    const guardPos3 = L - L * 0.04;
+    this.enemies.push(
+      new Enemy(guardPos1, this.height - 100, 'patrol', guardPos1 - patrolRange, guardPos1 + patrolRange)
+    );
+    this.enemies.push(
+      new Enemy(guardPos2, this.height - 100, 'shooter', guardPos2 - patrolRange * 0.5, guardPos2 + patrolRange * 0.5)
+    );
+    this.enemies.push(
+      new Enemy(guardPos3, this.height - 100, 'patrol', guardPos3 - patrolRange, guardPos3 + patrolRange)
+    );
   }
 
   createTraps() {
