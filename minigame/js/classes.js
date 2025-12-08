@@ -2,6 +2,7 @@
  * 游戏类 - 微信小游戏版
  * 包含所有游戏实体：勇士、公主、平台、敌人、陷阱、子弹、道具
  */
+import CONFIG from './config.js';
 
 // 勇士类
 export class Warrior {
@@ -52,7 +53,7 @@ export class Warrior {
 
   // 加载精灵图
   loadSprites() {
-    const basePath = 'images/MaleAdventurer/';
+    const basePath = CONFIG.getPath(CONFIG.IMAGES.maleAdventurerBase);
 
     // 加载待机精灵
     this.sprites.idle = wx.createImage();
@@ -515,7 +516,7 @@ export class Princess {
 
   // 加载精灵图
   loadSprites() {
-    const basePath = 'images/FemaleAdventurer/';
+    const basePath = CONFIG.getPath(CONFIG.IMAGES.femaleAdventurerBase);
 
     // 加载待机精灵
     this.sprites.idle = wx.createImage();

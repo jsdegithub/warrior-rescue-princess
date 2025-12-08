@@ -1,6 +1,7 @@
 /**
  * 主游戏逻辑 - 微信小游戏版
  */
+import CONFIG from './config.js';
 import SoundManager from './audio.js';
 import {Warrior, Princess, Platform, Enemy, Trap, Bullet, Item} from './classes.js';
 
@@ -69,11 +70,11 @@ class Game {
     this.lastTime = 0;
     this.animationFrame = null;
 
-    // 加载头像图片
+    // 加载头像图片（使用 CDN）
     this.warriorAvatar = wx.createImage();
-    this.warriorAvatar.src = 'images/warrior.jpg';
+    this.warriorAvatar.src = CONFIG.getPath(CONFIG.IMAGES.warriorAvatar);
     this.princessAvatar = wx.createImage();
-    this.princessAvatar.src = 'images/princess.jpg';
+    this.princessAvatar.src = CONFIG.getPath(CONFIG.IMAGES.princessAvatar);
 
     // 头像悬浮动画时间
     this.avatarFloatTime = 0;
@@ -84,8 +85,8 @@ class Game {
     // 初始化触摸控制
     this.initTouchControls();
 
-    // 播放主菜单背景音乐
-    this.soundManager.playBackgroundMusic('audio/opening_music.mp3');
+    // 播放主菜单背景音乐（使用 CDN）
+    this.soundManager.playBackgroundMusic(CONFIG.AUDIO.openingMusic);
 
     // 开始游戏循环
     this.startGameLoop();
@@ -347,7 +348,7 @@ class Game {
   startGame() {
     this.initLevel();
     this.gameState = 'playing';
-    this.soundManager.playBackgroundMusic('audio/bg.mp3');
+    this.soundManager.playBackgroundMusic(CONFIG.AUDIO.bgMusic);
   }
 
   // 初始化关卡
@@ -1189,7 +1190,7 @@ class Game {
       this.soundManager.stopRunning();
       this.soundManager.defeat(); // 播放主角死亡音效
       // 切换为游戏失败背景音乐（只播放一次）
-      this.soundManager.playBackgroundMusic('audio/love_cy.mp3', false);
+      this.soundManager.playBackgroundMusic(CONFIG.AUDIO.gameOverMusic, false);
     }
   }
 
@@ -1234,13 +1235,13 @@ class Game {
     this.soundManager.stopRunning();
     this.initLevel();
     this.gameState = 'playing'; // 在 initLevel 之后设置状态
-    this.soundManager.playBackgroundMusic('audio/bg.mp3');
+    this.soundManager.playBackgroundMusic(CONFIG.AUDIO.bgMusic);
   }
 
   // 返回菜单
   backToMenu() {
     this.soundManager.stopRunning();
-    this.soundManager.playBackgroundMusic('audio/opening_music.mp3');
+    this.soundManager.playBackgroundMusic(CONFIG.AUDIO.openingMusic);
     this.gameState = 'menu';
   }
 

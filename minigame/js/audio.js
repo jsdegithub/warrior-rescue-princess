@@ -1,24 +1,27 @@
 /**
  * 音频管理器 - 微信小游戏版
+ * 使用 CDN 远程资源
  */
+import CONFIG from './config.js';
+
 class SoundManager {
   constructor() {
     this.enabled = true;
     this.bgMusic = null;
     this.bgMusicVolume = 0.4;
     this.sfxVolume = 0.6;
-    
-    // 音效文件路径
+
+    // 音效文件路径（使用 CDN）
     this.soundPaths = {
-      jump: 'audio/jump.mp3',
-      attack: 'audio/normal_attack.mp3',
-      slashSword: 'audio/slash_sword.mp3',
-      hurt: 'audio/harmed.mp3',
-      dead: 'audio/dead.mp3',
-      victory: 'audio/victory.mp3',
-      running: 'audio/running.mp3',
+      jump: CONFIG.getPath(CONFIG.AUDIO.jump),
+      attack: CONFIG.getPath(CONFIG.AUDIO.attack),
+      slashSword: CONFIG.getPath(CONFIG.AUDIO.slashSword),
+      hurt: CONFIG.getPath(CONFIG.AUDIO.hurt),
+      dead: CONFIG.getPath(CONFIG.AUDIO.dead),
+      victory: CONFIG.getPath(CONFIG.AUDIO.victory),
+      running: CONFIG.getPath(CONFIG.AUDIO.running),
     };
-    
+
     // 走路音效（需要循环播放）
     this.runningSound = null;
     this.isRunning = false;
@@ -36,12 +39,12 @@ class SoundManager {
       audio.src = path;
       audio.volume = volume;
       audio.play();
-      
+
       // 播放完成后销毁
       audio.onEnded(() => {
         audio.destroy();
       });
-      
+
       audio.onError((err) => {
         console.log(`音效 ${soundKey} 播放出错:`, err);
         audio.destroy();
@@ -51,16 +54,22 @@ class SoundManager {
     }
   }
 
-  // 播放背景音乐
+  // 播放背景音乐（支持传入相对路径或完整路径）
   playBackgroundMusic(musicPath, loop = true) {
     // 先停止之前的背景音乐
     this.stopBackgroundMusic();
 
     if (!this.enabled) return;
 
+    // 如果是相对路径，转换为 CDN 路径
+    let fullPath = musicPath;
+    if (!musicPath.startsWith('http')) {
+      fullPath = CONFIG.getPath(musicPath);
+    }
+
     try {
       this.bgMusic = wx.createInnerAudioContext();
-      this.bgMusic.src = musicPath;
+      this.bgMusic.src = fullPath;
       this.bgMusic.loop = loop;
       this.bgMusic.volume = this.bgMusicVolume;
 
@@ -69,7 +78,7 @@ class SoundManager {
       });
 
       this.bgMusic.onPlay(() => {
-        console.log('背景音乐开始播放:', musicPath);
+        console.log('背景音乐开始播放:', fullPath);
       });
 
       this.bgMusic.onError((err) => {
@@ -169,4 +178,3 @@ class SoundManager {
 }
 
 export default SoundManager;
-

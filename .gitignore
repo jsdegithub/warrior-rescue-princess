@@ -34,3 +34,5 @@ Thumbs.db
 wx_upload_secretkey/
 project.private.config.json
 minigame/project.private.config.json
+
+docs/
