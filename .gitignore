@@ -29,6 +29,7 @@ Thumbs.db
 # env & secrets
 .env
 .env.*
+minigame/js/env.js
 
 # WeChat credentials & private configs
 wx_upload_secretkey/

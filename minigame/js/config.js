@@ -2,12 +2,14 @@
  * 游戏资源配置
  * CDN: 腾讯云 COS + CDN
  */
+import ENV from './env.js';
+
 const CONFIG = {
   // 是否使用远程资源
   USE_REMOTE: true,
 
-  // CDN 基础地址
-  CDN_BASE: 'https://qcsj.assets.aeeternity.com',
+  // CDN 基础地址（从本地环境配置读取）
+  CDN_BASE: ENV.CDN_BASE,
 
   // 本地资源路径（作为降级方案）
   LOCAL_BASE: '',
@@ -48,4 +50,3 @@ const CONFIG = {
 };
 
 export default CONFIG;
-
