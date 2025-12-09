@@ -6,7 +6,13 @@ import ENV from './env.js';
 
 const CONFIG = {
   // 是否使用远程资源
-  USE_REMOTE: true,
+  USE_CDN: false,
+
+  // 是否使用 COS 资源
+  USE_COS: true,
+
+  // COS 基础地址（从本地环境配置读取）
+  COS_BASE: ENV.COS_BASE,
 
   // CDN 基础地址（从本地环境配置读取）
   CDN_BASE: ENV.CDN_BASE,
@@ -20,8 +26,11 @@ const CONFIG = {
    * @returns {string} 完整路径
    */
   getPath(relativePath) {
-    if (this.USE_REMOTE) {
+    if (this.USE_CDN) {
       return `${this.CDN_BASE}/${relativePath}`;
+    }
+    if (this.USE_COS) {
+      return `${this.COS_BASE}/${relativePath}`;
     }
     return `${this.LOCAL_BASE}${relativePath}`;
   },
