@@ -26,12 +26,15 @@ const CONFIG = {
    * @returns {string} 完整路径
    */
   getPath(relativePath) {
+    // 优先使用 CDN 资源
     if (this.USE_CDN) {
       return `${this.CDN_BASE}/${relativePath}`;
     }
+    // 其次使用 COS 资源
     if (this.USE_COS) {
       return `${this.COS_BASE}/${relativePath}`;
     }
+    // 最后使用本地资源
     return `${this.LOCAL_BASE}${relativePath}`;
   },
 
