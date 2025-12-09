@@ -6,7 +6,7 @@ import ENV from './env.js';
 
 const CONFIG = {
   // 是否使用远程资源
-  USE_CDN: false,
+  USE_CDN: true,
 
   // 是否使用 COS 资源
   USE_COS: true,
